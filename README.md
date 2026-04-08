@@ -125,6 +125,8 @@ Reglas implementadas explicitamente:
 docker compose up -d postgres
 ```
 
+El contenedor publica PostgreSQL en `localhost:5433`.
+
 Nota: la API inicializa esquema y seed automaticamente al arrancar.
 
 ### 2. Backend

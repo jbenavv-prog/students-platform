@@ -89,6 +89,8 @@ npm start
 docker compose up -d postgres
 ```
 
+El contenedor publica PostgreSQL en `localhost:5433`.
+
 ## Evidencia Tecnica Ejecutada en Esta Entrega
 
 - `dotnet test StudentsPlatform.sln` ejecutado con 12 pruebas exitosas
