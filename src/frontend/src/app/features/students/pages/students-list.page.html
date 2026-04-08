@@ -1,0 +1,96 @@
+﻿<section class="students-page">
+  <header class="page-header">
+    <div>
+      <div class="page-header__eyebrow">Panel de registro</div>
+      <h1 class="page-header__title">Gestiona estudiantes, materias y cruces por profesor.</h1>
+      <p class="page-header__description">
+        El listado resume la carga academica actual y permite navegar a detalle, edicion o eliminacion.
+      </p>
+    </div>
+
+    <a class="btn btn-primary" routerLink="/students/new">Registrar estudiante</a>
+  </header>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <div class="stat-card__label">Estudiantes</div>
+      <div class="stat-card__value">{{ stats().totalStudents }}</div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-card__label">Con inscripcion</div>
+      <div class="stat-card__value">{{ stats().enrolledStudents }}</div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-card__label">Promedio de creditos</div>
+      <div class="stat-card__value">{{ stats().averageCredits }}</div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-card__label">Carga completa</div>
+      <div class="stat-card__value">{{ stats().fullLoadStudents }}</div>
+    </article>
+  </section>
+
+  @if (facade.error()) {
+    <div class="alert alert-error page-alert">{{ facade.error() }}</div>
+  }
+
+  <app-section-card title="Registros actuales" subtitle="Consulta rapida de estudiantes y su estado academico.">
+    <div card-action>
+      <input
+        class="search-input"
+        type="search"
+        placeholder="Buscar por nombre, correo o programa"
+        [value]="searchTerm()"
+        (input)="setSearchTerm($any($event.target).value)"
+      />
+    </div>
+
+    @if (facade.loading() && facade.students().length === 0) {
+      <div class="state-message">Cargando estudiantes...</div>
+    } @else if (filteredStudents().length === 0) {
+      <app-empty-state
+        icon="01"
+        title="Aun no hay resultados para mostrar"
+        description="Crea el primer estudiante o ajusta el filtro para ver registros existentes."
+        actionLabel="Limpiar filtro"
+        (action)="setSearchTerm('')"
+      ></app-empty-state>
+    } @else {
+      <div class="students-grid">
+        @for (student of filteredStudents(); track trackByStudentId($index, student)) {
+          <article class="student-card">
+            <div class="student-card__header">
+              <div>
+                <h2>{{ student.fullName }}</h2>
+                <p>{{ student.email }}</p>
+              </div>
+              <span class="chip">{{ student.programName }}</span>
+            </div>
+
+            <dl class="student-card__metrics">
+              <div>
+                <dt>Materias</dt>
+                <dd>{{ student.subjectsCount }}</dd>
+              </div>
+              <div>
+                <dt>Creditos</dt>
+                <dd>{{ student.credits }}</dd>
+              </div>
+              <div>
+                <dt>Registro</dt>
+                <dd>{{ student.createdAt | date: 'mediumDate' }}</dd>
+              </div>
+            </dl>
+
+            <div class="student-card__actions">
+              <a class="btn btn-secondary" [routerLink]="['/students', student.id]">Ver detalle</a>
+              <a class="btn btn-secondary" [routerLink]="['/students', student.id, 'edit']">Editar</a>
+              <button class="btn btn-danger" type="button" (click)="deleteStudent(student)">Eliminar</button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </app-section-card>
+</section>
+

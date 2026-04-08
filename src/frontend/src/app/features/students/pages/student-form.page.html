@@ -1,0 +1,135 @@
+﻿<section class="student-form-page">
+  <header class="page-header">
+    <div>
+      <div class="page-header__eyebrow">{{ isEditing() ? 'Edicion' : 'Nuevo registro' }}</div>
+      <h1 class="page-header__title">
+        {{ isEditing() ? 'Actualiza el perfil y la inscripcion del estudiante.' : 'Crea un estudiante con una carga academica valida.' }}
+      </h1>
+      <p class="page-header__description">
+        La interfaz previene errores antes del envio, pero la API sigue siendo la fuente de verdad.
+      </p>
+    </div>
+
+    <a class="btn btn-secondary" routerLink="/students">Volver al listado</a>
+  </header>
+
+  @if (!ready()) {
+    <div class="state-message">Cargando formulario...</div>
+  } @else {
+    <div class="form-layout">
+      <div class="form-layout__main">
+        <app-section-card title="Datos del estudiante" subtitle="Informacion base del registro academico.">
+          <form class="form-grid" [formGroup]="form" novalidate>
+            <div class="form-field">
+              <label for="fullName">Nombre completo</label>
+              <input id="fullName" type="text" formControlName="fullName" placeholder="Ej. Maria Fernanda Lopez" />
+              @if (fieldError('fullName')) {
+                <div class="field-error">{{ fieldError('fullName') }}</div>
+              }
+            </div>
+
+            <div class="form-grid form-grid--split">
+              <div class="form-field">
+                <label for="email">Correo</label>
+                <input id="email" type="email" formControlName="email" placeholder="maria@example.com" />
+                @if (fieldError('email')) {
+                  <div class="field-error">{{ fieldError('email') }}</div>
+                }
+              </div>
+
+              <div class="form-field">
+                <label for="programName">Programa academico</label>
+                <input id="programName" type="text" formControlName="programName" placeholder="Software Engineering" />
+                @if (fieldError('programName')) {
+                  <div class="field-error">{{ fieldError('programName') }}</div>
+                }
+              </div>
+            </div>
+          </form>
+        </app-section-card>
+
+        <app-section-card title="Seleccion de materias" subtitle="Debes elegir exactamente 3 materias, sin repetir profesor.">
+          <div class="subjects-grid">
+            @for (subject of subjects(); track subject.id) {
+              <button
+                type="button"
+                class="subject-card"
+                [class.subject-card--selected]="isSelected(subject.id)"
+                [class.subject-card--disabled]="isDisabled(subject)"
+                [disabled]="isDisabled(subject)"
+                (click)="toggleSubject(subject.id)"
+              >
+                <div class="subject-card__header">
+                  <span class="subject-card__name">{{ subject.name }}</span>
+                  <span class="chip">{{ subject.credits }} creditos</span>
+                </div>
+                <div class="subject-card__professor">{{ subject.professorName }}</div>
+                <div class="subject-card__hint">
+                  {{ isSelected(subject.id) ? 'Seleccionada' : 'Disponible para la carga' }}
+                </div>
+              </button>
+            }
+          </div>
+
+          @if (fieldError('subjectIds')) {
+            <div class="field-error selection-error">{{ fieldError('subjectIds') }}</div>
+          }
+        </app-section-card>
+      </div>
+
+      <div class="form-layout__side">
+        <app-section-card title="Resumen de inscripcion" subtitle="Validaciones visibles antes de guardar.">
+          <div class="summary-stack">
+            <div class="summary-stat">
+              <span>Materias seleccionadas</span>
+              <strong>{{ selection().selectedSubjects.length }}/3</strong>
+            </div>
+            <div class="summary-stat">
+              <span>Creditos totales</span>
+              <strong>{{ selection().totalCredits }}/9</strong>
+            </div>
+
+            <div>
+              <div class="summary-label">Profesores involucrados</div>
+              <div class="chips-wrap">
+                @for (professor of selection().selectedProfessors; track professor) {
+                  <span class="chip">{{ professor }}</span>
+                } @empty {
+                  <span class="muted">Aun no hay profesores asociados.</span>
+                }
+              </div>
+            </div>
+
+            <div>
+              <div class="summary-label">Materias elegidas</div>
+              <div class="summary-list">
+                @for (subject of selection().selectedSubjects; track subject.id) {
+                  <div class="summary-list__item">
+                    <strong>{{ subject.name }}</strong>
+                    <span>{{ subject.professorName }}</span>
+                  </div>
+                } @empty {
+                  <span class="muted">Selecciona materias desde el panel principal.</span>
+                }
+              </div>
+            </div>
+
+            @if (submissionError()) {
+              <div class="alert alert-error">{{ submissionError() }}</div>
+            } @else if (!selection().valid) {
+              <div class="alert alert-warning">
+                {{ selection().messages[0] }}
+              </div>
+            } @else {
+              <div class="alert alert-success">La seleccion es consistente y lista para guardarse.</div>
+            }
+
+            <button class="btn btn-primary btn-block" type="button" [disabled]="facade.submitting()" (click)="submit()">
+              {{ facade.submitting() ? 'Guardando...' : (isEditing() ? 'Guardar cambios' : 'Registrar estudiante') }}
+            </button>
+          </div>
+        </app-section-card>
+      </div>
+    </div>
+  }
+</section>

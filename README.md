@@ -1,0 +1,208 @@
+﻿# Students Platform
+
+Aplicacion web para registro de estudiantes construida como una entrega tecnica con criterio de Technical Lead / Software Architect.
+
+## Resumen Ejecutivo
+
+La solucion implementa un flujo completo de registro academico con CRUD de estudiantes, seleccion de materias, validaciones de negocio criticas, consulta de otros registros y visualizacion de companeros por clase. El objetivo fue construir una base profesional, moderna y facil de explicar en entrevista, sin sobreingenieria.
+
+El backend esta organizado como `Modular Monolith` con `Vertical Slice Architecture` y limites pragmaticos de `Clean Architecture`. El frontend usa `Angular 19` con `standalone components`, formularios reactivos tipados y una UI sobria orientada a demostracion ejecutiva.
+
+## Arquitectura Propuesta
+
+- Backend monolitico modular con cuatro proyectos: `Api`, `Application`, `Domain`, `Infrastructure`.
+- Casos de uso agrupados por feature: catalogo, estudiantes e inscripciones.
+- API publica `REST` para el navegador.
+- Persistencia principal en `PostgreSQL` con inicializacion automatica del esquema y seed.
+- Frontend por features con consumo de API limpio, validaciones tempranas y estado simple.
+- `ProblemDetails` para errores y logging estructurado con contexto.
+
+```mermaid
+flowchart LR
+  UI[Angular 19 Web App] --> API[ASP.NET Core REST API]
+  API --> APP[Application Slices]
+  APP --> DOM[Domain Rules]
+  APP --> INFRA[EF Core Infrastructure]
+  INFRA --> PG[(PostgreSQL)]
+```
+
+## Stack Tecnologico Final
+
+- Backend: `ASP.NET Core 8`
+- Frontend: `Angular 19`
+- Persistencia: `PostgreSQL 16`
+- ORM: `Entity Framework Core`
+- Testing backend: `xUnit`
+- Integracion API: `WebApplicationFactory` + `SQLite in-memory`
+- Documentacion: `Markdown` + `Mermaid`
+- Infra local: `Docker Compose`
+
+## Estructura del Repositorio
+
+```text
+/
+  compose.yml
+  students-platform.http
+  README.md
+  docs/
+    ARCHITECTURE.md
+    DELIVERY_DOCUMENT.md
+    QA_STRATEGY.md
+    TEST_MATRIX.md
+    MANUAL_CHECKLIST.md
+    ADR/
+  src/
+    backend/
+      StudentsPlatform.Api/
+      StudentsPlatform.Application/
+      StudentsPlatform.Domain/
+      StudentsPlatform.Infrastructure/
+    frontend/
+  tests/
+    README.md
+    backend/
+      StudentsPlatform.Domain.Tests/
+      StudentsPlatform.Api.IntegrationTests/
+```
+
+## Modelo de Dominio
+
+Entidades principales:
+
+- `Student`
+- `Professor`
+- `Subject`
+- `Enrollment`
+- `EnrollmentSubject`
+
+Reglas implementadas explicitamente:
+
+- exactamente 3 materias por estudiante
+- maximo 9 creditos por estudiante
+- no repetir materias dentro de la misma inscripcion
+- no seleccionar dos materias del mismo profesor
+- catalogo semilla de 10 materias y 5 profesores
+- detalle de estudiante con profesor por materia y companeros por clase
+
+## Plan de Implementacion por Agente
+
+- `Solution Architect`: definio arquitectura, modelo, ADRs y estructura documental.
+- `Backend Lead`: implemento dominio, slices, API REST, seed, persistencia y pruebas.
+- `Frontend Lead`: estructuro contratos, facade y base del consumo API.
+- `Technical Lead`: integro y completo la UI Angular, verifico compilacion, alinio docs y cerro entregables.
+- `QA / Test Engineer`: definio estrategia QA, matriz de pruebas y checklist manual.
+- `DevOps / IaC Advisor`: dejo `compose.yml` como base local y ADR para Terraform opcional.
+
+## Entregables Incluidos
+
+- codigo fuente completo de backend y frontend
+- README profesional
+- `docs/ARCHITECTURE.md`
+- `docs/DELIVERY_DOCUMENT.md`
+- ADRs minimos y ADR de Terraform opcional
+- diagramas Mermaid
+- estrategia QA, matriz de pruebas y checklist manual
+- archivo `.http` para probar endpoints
+- `compose.yml` para PostgreSQL local
+- pruebas automatizadas ejecutables
+
+## Como Ejecutar Localmente
+
+### 1. Base de datos
+
+```powershell
+docker compose up -d postgres
+```
+
+Nota: la API inicializa esquema y seed automaticamente al arrancar.
+
+### 2. Backend
+
+```powershell
+dotnet restore StudentsPlatform.sln
+dotnet run --project .\src\backend\StudentsPlatform.Api
+```
+
+La API queda disponible en `http://localhost:5277` y Swagger en `http://localhost:5277/swagger`.
+
+### 3. Frontend
+
+```powershell
+cd .\src\frontend
+npm install
+npm start
+```
+
+La aplicacion web queda disponible en `http://localhost:4200` usando proxy hacia la API.
+
+### 4. Pruebas
+
+```powershell
+dotnet test StudentsPlatform.sln
+```
+
+### 5. Pruebas manuales de API
+
+Usa el archivo [`students-platform.http`](./students-platform.http) desde VS Code o Rider.
+
+## Diseno de la API
+
+Endpoints principales:
+
+- `GET /api/students`
+- `GET /api/students/{id}`
+- `POST /api/students`
+- `PUT /api/students/{id}`
+- `PUT /api/students/{id}/subjects`
+- `DELETE /api/students/{id}`
+- `GET /api/subjects`
+- `GET /api/professors`
+
+Los errores se exponen como `ProblemDetails` con `traceId` y, cuando aplica, diccionario `errors` por campo.
+
+## Verificacion Realizada
+
+Validado en este workspace:
+
+- `dotnet test StudentsPlatform.sln` -> 12 pruebas pasando
+- `npm run build` en `src/frontend` -> compilacion exitosa
+
+Limitacion de entorno durante esta sesion:
+
+- no fue posible validar el arranque real contra PostgreSQL en Docker porque el engine local no estaba levantado al momento del smoke test
+
+## Decisiones Tecnicas Relevantes
+
+- `Modular Monolith` para mantener simplicidad operativa y claridad arquitectonica.
+- `Vertical Slices` para agrupar request, validacion y caso de uso por feature.
+- `REST` como contrato publico del frontend por compatibilidad natural con navegador.
+- `PostgreSQL` por su ajuste al dominio relacional y su soporte robusto de constraints.
+- `Angular standalone` con estado simple en lugar de NgRx para evitar complejidad innecesaria.
+
+## Evidencia de Cumplimiento del Enunciado
+
+- CRUD de estudiantes implementado en API y UI.
+- 10 materias y 5 profesores con seed controlado.
+- 3 creditos por materia y maximo 9 por estudiante.
+- exactamente 3 materias y sin profesor repetido.
+- consulta de otros estudiantes desde listado general.
+- detalle por estudiante con profesor y companeros por materia.
+- validacion duplicada en frontend y backend, con fuente de verdad en servidor.
+
+## Documentacion Complementaria
+
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
+- [`docs/DELIVERY_DOCUMENT.md`](./docs/DELIVERY_DOCUMENT.md)
+- [`docs/QA_STRATEGY.md`](./docs/QA_STRATEGY.md)
+- [`docs/TEST_MATRIX.md`](./docs/TEST_MATRIX.md)
+- [`docs/MANUAL_CHECKLIST.md`](./docs/MANUAL_CHECKLIST.md)
+- [`docs/ADR`](./docs/ADR)
+
+## Mejoras Futuras
+
+- autenticacion y autorizacion por roles
+- migraciones versionadas para entornos productivos
+- exportacion de reportes
+- observabilidad ampliada con metricas y trazas
+- IaC minima en Terraform si el despliegue cloud entra en alcance
+

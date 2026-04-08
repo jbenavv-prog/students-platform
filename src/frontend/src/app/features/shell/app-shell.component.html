@@ -1,0 +1,39 @@
+﻿<div class="shell">
+  <aside class="shell__sidebar">
+    <div class="brand-card">
+      <div class="brand-card__eyebrow">Students Platform</div>
+      <h1>Registro academico con reglas de negocio claras.</h1>
+      <p>
+        Demo de entrevista con Angular 19, API REST y un flujo listo para explicar como lider tecnico.
+      </p>
+    </div>
+
+    <nav class="nav-card" aria-label="Navegacion principal">
+      @for (item of navigation; track item.link) {
+        <a
+          class="nav-link"
+          [routerLink]="item.link"
+          routerLinkActive="nav-link--active"
+          [routerLinkActiveOptions]="{ exact: item.exact }"
+        >
+          <span class="nav-link__label">{{ item.label }}</span>
+          <span class="nav-link__description">{{ item.description }}</span>
+        </a>
+      }
+    </nav>
+
+    <section class="insight-card">
+      <span class="chip">Reglas activas</span>
+      <ul>
+        <li>Maximo 3 materias y 9 creditos.</li>
+        <li>Sin materias repetidas.</li>
+        <li>Sin profesores duplicados en la seleccion.</li>
+        <li>Companeros visibles por materia.</li>
+      </ul>
+    </section>
+  </aside>
+
+  <main class="shell__content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

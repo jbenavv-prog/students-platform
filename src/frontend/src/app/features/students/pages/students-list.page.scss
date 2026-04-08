@@ -1,0 +1,88 @@
+﻿.students-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.page-alert {
+  margin-top: -0.3rem;
+}
+
+.search-input {
+  min-width: min(320px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.state-message {
+  padding: 2rem 0;
+  color: var(--text-soft);
+}
+
+.students-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.student-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 249, 252, 0.9));
+}
+
+.student-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.student-card__header h2 {
+  font-size: 1.2rem;
+}
+
+.student-card__header p {
+  margin-top: 0.35rem;
+  color: var(--text-soft);
+}
+
+.student-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 0;
+}
+
+.student-card__metrics dt {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.student-card__metrics dd {
+  margin: 0.35rem 0 0;
+  color: var(--text-strong);
+  font: 800 1.05rem/1.1 'Manrope', sans-serif;
+}
+
+.student-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+@media (max-width: 720px) {
+  .student-card__metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .student-card__header {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,66 @@
+@host = http://localhost:5277
+@studentId = 00000000-0000-0000-0000-000000000000
+
+### Get subjects catalog
+GET {{host}}/api/subjects
+Accept: application/json
+
+### Get professors catalog
+GET {{host}}/api/professors
+Accept: application/json
+
+### Create student
+POST {{host}}/api/students
+Content-Type: application/json
+Accept: application/json
+
+{
+  "fullName": "Maria Fernanda Lopez",
+  "email": "maria.lopez@example.com",
+  "programName": "Software Engineering",
+  "subjectIds": [
+    "4f7da76f-b7a6-4eab-ae64-b0fe944b85e7",
+    "4467d270-8fc3-491b-b2ae-e7d33b1625b0",
+    "0e8a4288-68c0-4e2c-b3da-c8b0717254de"
+  ]
+}
+
+### List students
+GET {{host}}/api/students
+Accept: application/json
+
+### Get student detail
+GET {{host}}/api/students/{{studentId}}
+Accept: application/json
+
+### Update student profile and selection
+PUT {{host}}/api/students/{{studentId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "fullName": "Maria Fernanda Lopez Gomez",
+  "email": "maria.gomez@example.com",
+  "programName": "Computer Science",
+  "subjectIds": [
+    "e69226c2-0df4-4c6d-9cde-76f9388aa96f",
+    "7e1c84a4-8975-4af2-87b9-dd08eb529ba4",
+    "8743dd51-8b11-4145-afdd-f6dc5444fd3f"
+  ]
+}
+
+### Update only student subjects
+PUT {{host}}/api/students/{{studentId}}/subjects
+Content-Type: application/json
+Accept: application/json
+
+{
+  "subjectIds": [
+    "4f7da76f-b7a6-4eab-ae64-b0fe944b85e7",
+    "7e1c84a4-8975-4af2-87b9-dd08eb529ba4"
+  ]
+}
+
+### Delete student
+DELETE {{host}}/api/students/{{studentId}}
+Accept: application/json

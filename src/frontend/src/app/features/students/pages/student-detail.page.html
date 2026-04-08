@@ -1,0 +1,105 @@
+﻿<section class="student-detail-page">
+  @if (facade.loading() && !student()) {
+    <div class="state-message">Cargando detalle del estudiante...</div>
+  } @else if (!student()) {
+    <app-empty-state
+      icon="404"
+      title="No encontramos el detalle solicitado"
+      description="Puede que el estudiante haya sido eliminado o que el identificador no exista."
+      actionLabel="Volver al listado"
+      (action)="router.navigate(['/students'])"
+    ></app-empty-state>
+  } @else {
+    <header class="page-header">
+      <div>
+        <div class="page-header__eyebrow">Detalle del estudiante</div>
+        <h1 class="page-header__title">{{ student()!.fullName }}</h1>
+        <p class="page-header__description">
+          {{ student()!.programName }} · {{ student()!.email }}
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <a class="btn btn-secondary" routerLink="/students">Volver</a>
+        <a class="btn btn-secondary" [routerLink]="['/students', student()!.id, 'edit']">Editar</a>
+        <button class="btn btn-danger" type="button" (click)="deleteStudent()">Eliminar</button>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <div class="stat-card__label">Programa</div>
+        <div class="stat-card__value">{{ student()!.programName }}</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-card__label">Materias inscritas</div>
+        <div class="stat-card__value">{{ student()!.enrollment?.subjects?.length ?? 0 }}</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-card__label">Creditos</div>
+        <div class="stat-card__value">{{ student()!.enrollment?.totalCredits ?? 0 }}</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-card__label">Companeros compartidos</div>
+        <div class="stat-card__value">{{ classmatesCount() }}</div>
+      </article>
+    </section>
+
+    <app-section-card title="Perfil" subtitle="Informacion general del registro academico.">
+      <div class="profile-grid">
+        <div>
+          <span class="profile-label">Correo</span>
+          <strong>{{ student()!.email }}</strong>
+        </div>
+        <div>
+          <span class="profile-label">Programa</span>
+          <strong>{{ student()!.programName }}</strong>
+        </div>
+        <div>
+          <span class="profile-label">Creado</span>
+          <strong>{{ student()!.createdAt | date: 'mediumDate' }}</strong>
+        </div>
+      </div>
+    </app-section-card>
+
+    @if (!student()!.enrollment) {
+      <app-empty-state
+        icon="00"
+        title="El estudiante aun no tiene materias inscritas"
+        description="Puedes asignarlas desde la vista de edicion para completar la carga academica."
+        actionLabel="Editar estudiante"
+        (action)="router.navigate(['/students', student()!.id, 'edit'])"
+      ></app-empty-state>
+    } @else {
+      <div class="subjects-detail-grid">
+        @for (subject of student()!.enrollment!.subjects; track subject.subjectId) {
+          <app-section-card [title]="subject.subjectName" [subtitle]="subject.credits + ' creditos'">
+            <div card-action>
+              <span class="chip">{{ subject.professorName }}</span>
+            </div>
+
+            <div class="subject-detail">
+              <div>
+                <span class="profile-label">Profesor</span>
+                <strong>{{ subject.professorName }}</strong>
+              </div>
+
+              <div>
+                <span class="profile-label">Companeros de clase</span>
+                @if (subject.classmates.length > 0) {
+                  <div class="chips-wrap chips-wrap--top">
+                    @for (classmate of subject.classmates; track classmate) {
+                      <span class="chip">{{ classmate }}</span>
+                    }
+                  </div>
+                } @else {
+                  <p class="muted">No comparte esta materia con otros estudiantes registrados.</p>
+                }
+              </div>
+            </div>
+          </app-section-card>
+        }
+      </div>
+    }
+  }
+</section>

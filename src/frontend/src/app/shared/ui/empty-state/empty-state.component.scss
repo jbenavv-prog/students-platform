@@ -1,0 +1,36 @@
+:host {
+  display: block;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 32px 24px;
+  color: #475569;
+}
+
+.empty-state__icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.08), rgba(14, 165, 233, 0.14));
+  color: #0f172a;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.empty-state h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.1rem;
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 36rem;
+}
+
