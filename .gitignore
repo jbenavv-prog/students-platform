@@ -16,3 +16,10 @@ src/frontend/dist/
 src/frontend/coverage/
 
 artifacts/
+.docker/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.auto.tfvars
+backend.hcl

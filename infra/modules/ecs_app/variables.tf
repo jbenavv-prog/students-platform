@@ -1,0 +1,83 @@
+variable "project_name" {
+  type = string
+}
+
+variable "environment" {
+  type = string
+}
+
+variable "aws_region" {
+  type = string
+}
+
+variable "vpc_id" {
+  type = string
+}
+
+variable "public_subnet_ids" {
+  type = list(string)
+}
+
+variable "app_subnet_ids" {
+  type = list(string)
+}
+
+variable "alb_security_group_id" {
+  type = string
+}
+
+variable "app_security_group_id" {
+  type = string
+}
+
+variable "db_connection_secret_arn" {
+  type = string
+}
+
+variable "container_image" {
+  type = string
+}
+
+variable "container_port" {
+  type    = number
+  default = 8080
+}
+
+variable "desired_count" {
+  type = number
+}
+
+variable "min_capacity" {
+  type = number
+}
+
+variable "max_capacity" {
+  type = number
+}
+
+variable "cpu" {
+  type = number
+}
+
+variable "memory" {
+  type = number
+}
+
+variable "health_check_path" {
+  type    = string
+  default = "/health"
+}
+
+variable "allowed_origins" {
+  type = list(string)
+}
+
+variable "aspnetcore_environment" {
+  type    = string
+  default = "Production"
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}

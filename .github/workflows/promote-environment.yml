@@ -1,0 +1,90 @@
+name: promote-environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: "Environment destino"
+        required: true
+        type: choice
+        options:
+          - qa
+          - prod
+      image_tag:
+        description: "Tag de imagen ya publicada en ECR"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target_environment }}
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+
+      - name: Init shared registry state
+        working-directory: infra/shared/ecr
+        run: |
+          cat > backend.hcl <<EOF
+          bucket       = "${TF_STATE_BUCKET}"
+          key          = "shared/ecr/terraform.tfstate"
+          region       = "${AWS_REGION}"
+          encrypt      = true
+          use_lockfile = true
+          EOF
+          terraform init -input=false -backend-config=backend.hcl
+
+      - name: Read shared registry outputs
+        id: registry
+        working-directory: infra/shared/ecr
+        run: echo "repository_url=$(terraform output -raw ecr_repository_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Init target environment state
+        working-directory: infra/live
+        run: |
+          cat > backend.hcl <<EOF
+          bucket       = "${TF_STATE_BUCKET}"
+          key          = "live/${{ inputs.target_environment }}/terraform.tfstate"
+          region       = "${AWS_REGION}"
+          encrypt      = true
+          use_lockfile = true
+          EOF
+          terraform init -input=false -backend-config=backend.hcl
+
+      - name: Apply target platform and deployment
+        working-directory: infra/live
+        env:
+          REPOSITORY_URL: ${{ steps.registry.outputs.repository_url }}
+        run: |
+          terraform apply \
+            -input=false \
+            -auto-approve \
+            -var-file=envs/${{ inputs.target_environment }}.tfvars \
+            -var="aws_region=${AWS_REGION}" \
+            -var="container_image=${REPOSITORY_URL}:${{ inputs.image_tag }}"
+
+      - name: Smoke test
+        working-directory: infra/live
+        run: |
+          ALB_DNS="$(terraform output -raw alb_dns_name)"
+          curl --fail --retry 10 --retry-delay 15 "http://${ALB_DNS}/health"

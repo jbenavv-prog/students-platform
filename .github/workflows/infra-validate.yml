@@ -1,0 +1,35 @@
+name: infra-validate
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra-validate.yml"
+      - ".github/workflows/deploy-dev.yml"
+      - ".github/workflows/promote-environment.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check Terraform formatting
+        run: terraform -chdir=infra fmt -check -recursive
+
+      - name: Validate shared registry stack
+        working-directory: infra/shared/ecr
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Validate live stack
+        working-directory: infra/live
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate

@@ -41,7 +41,10 @@ flowchart LR
 
 ```text
 /
+  .github/
+    workflows/
   compose.yml
+  Dockerfile
   students-platform.http
   README.md
   docs/
@@ -58,6 +61,11 @@ flowchart LR
       StudentsPlatform.Domain/
       StudentsPlatform.Infrastructure/
     frontend/
+  infra/
+    bootstrap/
+    shared/
+    live/
+    modules/
   tests/
     README.md
     backend/
@@ -104,6 +112,9 @@ Reglas implementadas explicitamente:
 - estrategia QA, matriz de pruebas y checklist manual
 - archivo `.http` para probar endpoints
 - `compose.yml` para PostgreSQL local
+- `Dockerfile` para contenerizar el backend
+- base de `Terraform` para AWS en `infra/`
+- workflows de `GitHub Actions` para validacion y despliegue
 - pruebas automatizadas ejecutables
 
 ## Como Ejecutar Localmente
@@ -197,6 +208,7 @@ Limitacion de entorno durante esta sesion:
 - [`docs/TEST_MATRIX.md`](./docs/TEST_MATRIX.md)
 - [`docs/MANUAL_CHECKLIST.md`](./docs/MANUAL_CHECKLIST.md)
 - [`docs/ADR`](./docs/ADR)
+- [`infra/README.md`](./infra/README.md)
 
 ## Mejoras Futuras
 

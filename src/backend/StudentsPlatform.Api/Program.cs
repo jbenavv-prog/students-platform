@@ -8,6 +8,8 @@ using StudentsPlatform.Infrastructure.Persistence;
 using StudentsPlatform.Infrastructure.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:4200", "https://localhost:4200"];
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -17,7 +19,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -50,7 +52,18 @@ using (var scope = app.Services.CreateScope())
     await DatabaseInitializer.InitializeAsync(dbContext, logger);
 }
 
-app.MapGet("/", () => Results.Redirect("/swagger"))
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/", () => Results.Redirect("/swagger"))
+        .ExcludeFromDescription();
+}
+else
+{
+    app.MapGet("/", () => Results.Ok(new { service = "Students Platform API" }))
+        .ExcludeFromDescription();
+}
+
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
     .ExcludeFromDescription();
 
 app.MapCatalogEndpoints();

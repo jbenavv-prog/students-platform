@@ -1,0 +1,109 @@
+name: deploy-dev
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/backend/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "infra/**"
+      - ".github/workflows/deploy-dev.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run backend tests
+        run: dotnet test StudentsPlatform.sln --configuration Release
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+
+      - name: Init shared registry state
+        working-directory: infra/shared/ecr
+        run: |
+          cat > backend.hcl <<EOF
+          bucket       = "${TF_STATE_BUCKET}"
+          key          = "shared/ecr/terraform.tfstate"
+          region       = "${AWS_REGION}"
+          encrypt      = true
+          use_lockfile = true
+          EOF
+          terraform init -input=false -backend-config=backend.hcl
+
+      - name: Apply shared registry
+        working-directory: infra/shared/ecr
+        run: terraform apply -input=false -auto-approve -var="aws_region=${AWS_REGION}"
+
+      - name: Capture ECR repository url
+        id: registry
+        working-directory: infra/shared/ecr
+        run: echo "repository_url=$(terraform output -raw ecr_repository_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        env:
+          REPOSITORY_URL: ${{ steps.registry.outputs.repository_url }}
+        run: |
+          docker build -t "${REPOSITORY_URL}:${IMAGE_TAG}" .
+          docker push "${REPOSITORY_URL}:${IMAGE_TAG}"
+
+      - name: Init live state
+        working-directory: infra/live
+        run: |
+          cat > backend.hcl <<EOF
+          bucket       = "${TF_STATE_BUCKET}"
+          key          = "live/dev/terraform.tfstate"
+          region       = "${AWS_REGION}"
+          encrypt      = true
+          use_lockfile = true
+          EOF
+          terraform init -input=false -backend-config=backend.hcl
+
+      - name: Apply dev platform and deployment
+        working-directory: infra/live
+        env:
+          REPOSITORY_URL: ${{ steps.registry.outputs.repository_url }}
+        run: |
+          terraform apply \
+            -input=false \
+            -auto-approve \
+            -var-file=envs/dev.tfvars \
+            -var="aws_region=${AWS_REGION}" \
+            -var="container_image=${REPOSITORY_URL}:${IMAGE_TAG}"
+
+      - name: Smoke test
+        working-directory: infra/live
+        run: |
+          ALB_DNS="$(terraform output -raw alb_dns_name)"
+          curl --fail --retry 10 --retry-delay 15 "http://${ALB_DNS}/health"
