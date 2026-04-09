@@ -22,7 +22,8 @@ jobs:
 
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
-      AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
+      AWS_ROLE_TO_ASSUME_PLAN: ${{ vars.AWS_ROLE_TO_ASSUME_PLAN || vars.AWS_ROLE_TO_ASSUME }}
+      AWS_ROLE_TO_ASSUME_APPLY: ${{ vars.AWS_ROLE_TO_ASSUME_APPLY || vars.AWS_ROLE_TO_ASSUME }}
       TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
       IMAGE_TAG: ${{ github.sha }}
 
@@ -41,11 +42,11 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Configure AWS credentials via OIDC
+      - name: Configure AWS credentials for plan via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_PLAN }}
 
       - name: Init shared registry state
         working-directory: infra/shared/ecr
@@ -59,9 +60,30 @@ jobs:
           EOF
           terraform init -input=false -backend-config=backend.hcl
 
+      - name: Plan shared registry
+        working-directory: infra/shared/ecr
+        run: |
+          terraform plan \
+            -input=false \
+            -out=tfplan \
+            -var="aws_region=${AWS_REGION}"
+          terraform show -no-color tfplan > tfplan.txt
+
+      - name: Upload shared registry plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-ecr-plan-dev-${{ github.sha }}
+          path: infra/shared/ecr/tfplan.txt
+
+      - name: Configure AWS credentials for apply via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_APPLY }}
+
       - name: Apply shared registry
         working-directory: infra/shared/ecr
-        run: terraform apply -input=false -auto-approve -var="aws_region=${AWS_REGION}"
+        run: terraform apply -input=false -auto-approve tfplan
 
       - name: Capture ECR repository url
         id: registry
@@ -90,17 +112,40 @@ jobs:
           EOF
           terraform init -input=false -backend-config=backend.hcl
 
-      - name: Apply dev platform and deployment
+      - name: Reconfigure AWS credentials for plan via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_PLAN }}
+
+      - name: Plan dev platform and deployment
         working-directory: infra/live
         env:
           REPOSITORY_URL: ${{ steps.registry.outputs.repository_url }}
         run: |
-          terraform apply \
+          terraform plan \
             -input=false \
-            -auto-approve \
+            -out=tfplan \
             -var-file=envs/dev.tfvars \
             -var="aws_region=${AWS_REGION}" \
             -var="container_image=${REPOSITORY_URL}:${IMAGE_TAG}"
+          terraform show -no-color tfplan > tfplan.txt
+
+      - name: Upload dev plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-dev-plan-${{ github.sha }}
+          path: infra/live/tfplan.txt
+
+      - name: Reconfigure AWS credentials for apply via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_APPLY }}
+
+      - name: Apply dev platform and deployment
+        working-directory: infra/live
+        run: terraform apply -input=false -auto-approve tfplan
 
       - name: Smoke test
         working-directory: infra/live

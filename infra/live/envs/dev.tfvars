@@ -30,3 +30,6 @@ memory        = 1024
 frontend_allowed_origins = [
   "http://localhost:4200"
 ]
+
+create_alarm_topic = true
+alarm_email_subscriptions = []

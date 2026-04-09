@@ -34,5 +34,8 @@ module "platform" {
   memory                   = var.memory
   health_check_path        = var.health_check_path
   frontend_allowed_origins = var.frontend_allowed_origins
+  alarm_actions            = var.alarm_actions
+  create_alarm_topic       = var.create_alarm_topic
+  alarm_email_subscriptions = var.alarm_email_subscriptions
   tags                     = local.common_tags
 }

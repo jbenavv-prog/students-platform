@@ -7,6 +7,7 @@ Esta carpeta deja una base pragmatica para desplegar el backend monolitico modul
 - `ECS Fargate` para ejecutar la API
 - `ALB` para exponer HTTP
 - `RDS PostgreSQL` para persistencia
+- `CloudWatch` para logs y alarmas operativas basicas
 - `GitHub Actions` para CI/CD
 
 ## Estructura
@@ -41,6 +42,13 @@ En otras palabras:
 - `IaC` controla el estado de la plataforma.
 - `CI/CD` mueve una nueva version de la aplicacion sobre esa plataforma.
 
+Workflows incluidos en esta base:
+
+- `infra-validate`: formato y validacion estatica de Terraform en PRs
+- `infra-plan`: genera evidencia de `terraform plan` para `shared/ecr` y `live/dev` en PRs, la sube como artifact y actualiza un comentario en el PR
+- `deploy-dev`: construye, publica imagen y despliega `dev`
+- `promote-environment`: separa `plan` y `apply` para promover una imagen ya publicada hacia `qa` o `prod`
+
 ## Que es OIDC
 
 `OIDC` significa `OpenID Connect`.
@@ -70,7 +78,11 @@ Variables de repositorio o environment recomendadas:
 
 - `AWS_REGION`
 - `AWS_ROLE_TO_ASSUME`
+- `AWS_ROLE_TO_ASSUME_PLAN`
+- `AWS_ROLE_TO_ASSUME_APPLY`
 - `TF_STATE_BUCKET`
+
+Si solo defines `AWS_ROLE_TO_ASSUME`, los workflows siguen funcionando. Si defines `AWS_ROLE_TO_ASSUME_PLAN` y `AWS_ROLE_TO_ASSUME_APPLY`, los workflows usan esos roles separados segun el paso.
 
 ### 3. Crear el rol IAM para OIDC
 
@@ -79,13 +91,35 @@ El rol debe confiar en el proveedor OIDC de GitHub y permitir:
 - `ecr:*` sobre el repositorio necesario
 - `ecs:*` sobre el cluster y servicio del proyecto
 - `elasticloadbalancing:*` cuando aplique IaC
-- `rds:*`, `ec2:*`, `logs:*`, `iam:*`, `secretsmanager:*`, `application-autoscaling:*` para Terraform
+- `rds:*`, `ec2:*`, `logs:*`, `cloudwatch:*`, `sns:*`, `iam:*`, `secretsmanager:*`, `application-autoscaling:*` para Terraform
 - `s3:*` sobre el bucket de state
 
 En produccion conviene separar roles:
 
 - uno para `plan`
 - otro para `apply`
+
+El workflow ya soporta esa separacion usando `AWS_ROLE_TO_ASSUME_PLAN` y `AWS_ROLE_TO_ASSUME_APPLY`, con fallback a `AWS_ROLE_TO_ASSUME`.
+
+Si quieres una aprobacion humana explicita antes del `apply` en `prod`, configura `required reviewers` en el environment `prod` de GitHub. Con el workflow actual, el `plan` corre primero y el gate del environment se aplica justo antes del job de `apply`.
+
+## Observabilidad Minima Incluida
+
+La base de infraestructura deja alarmas de `CloudWatch` para:
+
+- `HTTPCode_Target_5XX_Count` del `ALB`
+- `UnHealthyHostCount` del target group
+- `CPUUtilization` del servicio `ECS`
+
+Puedes conectar acciones de alarma de dos maneras:
+
+- `alarm_actions`
+- `create_alarm_topic`
+- `alarm_email_subscriptions`
+
+Si `create_alarm_topic = true`, el entorno crea un topic `SNS` propio y su ARN se agrega automaticamente a `alarm_actions`. Si ademas cargas valores en `alarm_email_subscriptions`, Terraform deja creadas las suscripciones por email pendientes de confirmacion.
+
+Los nombres de las alarmas quedan expuestos en el output `alarm_names` y el topic generado en `alarm_topic_arn`.
 
 ## Ambitos de esta base
 

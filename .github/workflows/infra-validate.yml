@@ -5,6 +5,7 @@ on:
     paths:
       - "infra/**"
       - ".github/workflows/infra-validate.yml"
+      - ".github/workflows/infra-plan.yml"
       - ".github/workflows/deploy-dev.yml"
       - ".github/workflows/promote-environment.yml"
 

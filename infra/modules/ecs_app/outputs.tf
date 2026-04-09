@@ -13,3 +13,11 @@ output "service_name" {
 output "task_definition_family" {
   value = aws_ecs_task_definition.this.family
 }
+
+output "alarm_names" {
+  value = {
+    target_5xx      = aws_cloudwatch_metric_alarm.target_5xx.alarm_name
+    unhealthy_hosts = aws_cloudwatch_metric_alarm.unhealthy_hosts.alarm_name
+    ecs_cpu_high    = aws_cloudwatch_metric_alarm.ecs_cpu_high.alarm_name
+  }
+}

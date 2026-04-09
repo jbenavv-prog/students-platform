@@ -77,6 +77,30 @@ module "database" {
   tags                    = var.tags
 }
 
+resource "aws_sns_topic" "alarms" {
+  count = var.create_alarm_topic ? 1 : 0
+
+  name = "${var.project_name}-${var.environment}-alarms"
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-${var.environment}-alarms"
+  })
+}
+
+resource "aws_sns_topic_subscription" "alarm_email" {
+  for_each = var.create_alarm_topic ? toset(var.alarm_email_subscriptions) : toset([])
+
+  topic_arn = aws_sns_topic.alarms[0].arn
+  protocol  = "email"
+  endpoint  = each.value
+}
+
+locals {
+  effective_alarm_actions = concat(
+    var.alarm_actions,
+    aws_sns_topic.alarms[*].arn)
+}
+
 module "ecs_app" {
   source = "../ecs_app"
 
@@ -98,5 +122,6 @@ module "ecs_app" {
   memory                   = var.memory
   health_check_path        = var.health_check_path
   allowed_origins          = var.frontend_allowed_origins
+  alarm_actions            = local.effective_alarm_actions
   tags                     = var.tags
 }

@@ -96,6 +96,21 @@ variable "frontend_allowed_origins" {
   type = list(string)
 }
 
+variable "alarm_actions" {
+  type    = list(string)
+  default = []
+}
+
+variable "create_alarm_topic" {
+  type    = bool
+  default = false
+}
+
+variable "alarm_email_subscriptions" {
+  type    = list(string)
+  default = []
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

@@ -30,3 +30,6 @@ memory        = 2048
 frontend_allowed_origins = [
   "https://students.example.com"
 ]
+
+create_alarm_topic = true
+alarm_email_subscriptions = []

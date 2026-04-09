@@ -30,3 +30,6 @@ memory        = 1024
 frontend_allowed_origins = [
   "https://qa.example.com"
 ]
+
+create_alarm_topic = true
+alarm_email_subscriptions = []

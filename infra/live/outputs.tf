@@ -17,3 +17,11 @@ output "task_definition_family" {
 output "db_endpoint" {
   value = module.platform.db_endpoint
 }
+
+output "alarm_names" {
+  value = module.platform.alarm_names
+}
+
+output "alarm_topic_arn" {
+  value = module.platform.alarm_topic_arn
+}
