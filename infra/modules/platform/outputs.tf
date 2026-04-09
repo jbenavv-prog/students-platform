@@ -25,3 +25,19 @@ output "alarm_names" {
 output "alarm_topic_arn" {
   value = try(aws_sns_topic.alarms[0].arn, null)
 }
+
+output "frontend_bucket_name" {
+  value = module.frontend_static.bucket_name
+}
+
+output "frontend_distribution_id" {
+  value = module.frontend_static.distribution_id
+}
+
+output "frontend_distribution_domain_name" {
+  value = module.frontend_static.distribution_domain_name
+}
+
+output "frontend_url" {
+  value = module.frontend_static.frontend_url
+}

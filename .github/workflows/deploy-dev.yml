@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "src/backend/**"
+      - "src/frontend/**"
       - "Dockerfile"
       - ".dockerignore"
       - "infra/**"
@@ -36,8 +37,32 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Run backend tests
-        run: dotnet test StudentsPlatform.sln --configuration Release
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Restore backend solution
+        run: dotnet restore StudentsPlatform.sln
+
+      - name: Build backend solution
+        run: dotnet build StudentsPlatform.sln --configuration Release --no-restore
+
+      - name: Run domain tests
+        run: dotnet test tests/backend/StudentsPlatform.Domain.Tests/StudentsPlatform.Domain.Tests.csproj --configuration Release --no-build
+
+      - name: Run API integration tests
+        run: dotnet test tests/backend/StudentsPlatform.Api.IntegrationTests/StudentsPlatform.Api.IntegrationTests.csproj --configuration Release --no-build
+
+      - name: Install frontend dependencies
+        working-directory: src/frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: src/frontend
+        run: npm run build
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -152,3 +177,36 @@ jobs:
         run: |
           ALB_DNS="$(terraform output -raw alb_dns_name)"
           curl --fail --retry 10 --retry-delay 15 "http://${ALB_DNS}/health"
+
+      - name: Capture frontend hosting outputs
+        id: frontend
+        working-directory: infra/live
+        run: |
+          echo "bucket_name=$(terraform output -raw frontend_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "distribution_id=$(terraform output -raw frontend_distribution_id)" >> "$GITHUB_OUTPUT"
+          echo "frontend_url=$(terraform output -raw frontend_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish frontend to S3
+        env:
+          FRONTEND_BUCKET: ${{ steps.frontend.outputs.bucket_name }}
+        run: |
+          FRONTEND_DIST="src/frontend/dist/students-platform-web"
+          if [ -d "${FRONTEND_DIST}/browser" ]; then
+            FRONTEND_DIST="${FRONTEND_DIST}/browser"
+          fi
+          aws s3 sync "${FRONTEND_DIST}/" "s3://${FRONTEND_BUCKET}" --delete
+
+      - name: Invalidate CloudFront cache
+        env:
+          DISTRIBUTION_ID: ${{ steps.frontend.outputs.distribution_id }}
+        run: aws cloudfront create-invalidation --distribution-id "${DISTRIBUTION_ID}" --paths "/*"
+
+      - name: Publish deploy summary
+        env:
+          FRONTEND_URL: ${{ steps.frontend.outputs.frontend_url }}
+        run: |
+          {
+            echo "## Dev deployment"
+            echo ""
+            echo "Frontend URL: ${FRONTEND_URL}"
+          } >> "$GITHUB_STEP_SUMMARY"

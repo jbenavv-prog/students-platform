@@ -7,6 +7,7 @@ Esta carpeta deja una base pragmatica para desplegar el backend monolitico modul
 - `ECS Fargate` para ejecutar la API
 - `ALB` para exponer HTTP
 - `RDS PostgreSQL` para persistencia
+- `S3 + CloudFront` para publicar el frontend Angular
 - `CloudWatch` para logs y alarmas operativas basicas
 - `GitHub Actions` para CI/CD
 
@@ -27,6 +28,7 @@ infra/
     network/
     database/
     ecs_app/
+    frontend_static/
     platform/
 ```
 
@@ -46,7 +48,8 @@ Workflows incluidos en esta base:
 - `infra-validate`: formato y validacion estatica de Terraform en PRs
 - `infra-plan`: genera evidencia de `terraform plan` para `shared/ecr` y `live/dev` en PRs, la sube como artifact y actualiza un comentario en el PR
 - `deploy-dev`: construye, publica imagen y despliega `dev`
-- `promote-qa`: separa `plan` y `apply` para promover una imagen ya publicada hacia `qa`
+- `deploy-dev`: tambien construye el frontend Angular, publica a `S3` e invalida `CloudFront`
+- `promote-qa`: separa `plan` y `apply` para promover una imagen ya publicada hacia `qa`, empaqueta el build del frontend y lo publica a `S3`
 
 ## Que es OIDC
 
@@ -83,6 +86,8 @@ Variables de repositorio o environment recomendadas:
 
 Si solo defines `AWS_ROLE_TO_ASSUME`, los workflows siguen funcionando. Si defines `AWS_ROLE_TO_ASSUME_PLAN` y `AWS_ROLE_TO_ASSUME_APPLY`, los workflows usan esos roles separados segun el paso.
 
+Para una guia mas concreta de `OIDC`, trust policies y matriz exacta de variables entre repositorio, `dev` y `qa`, revisa [bootstrap/github_oidc/README.md](/c:/intp/students-platform/infra/bootstrap/github_oidc/README.md).
+
 ### 3. Crear el rol IAM para OIDC
 
 El rol debe confiar en el proveedor OIDC de GitHub y permitir:
@@ -90,8 +95,10 @@ El rol debe confiar en el proveedor OIDC de GitHub y permitir:
 - `ecr:*` sobre el repositorio necesario
 - `ecs:*` sobre el cluster y servicio del proyecto
 - `elasticloadbalancing:*` cuando aplique IaC
+- `cloudfront:*` para crear la distribucion y publicar invalidaciones
 - `rds:*`, `ec2:*`, `logs:*`, `cloudwatch:*`, `sns:*`, `iam:*`, `secretsmanager:*`, `application-autoscaling:*` para Terraform
 - `s3:*` sobre el bucket de state
+- `s3:ListBucket`, `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` sobre el bucket del frontend
 
 En ambientes con aprobacion conviene separar roles:
 
@@ -130,6 +137,7 @@ La configuracion activa de `dev` y `qa` esta optimizada para entrevista tecnica 
 - retencion de logs reducida a `3` dias
 - `desired_count = 1` y `max_capacity = 1` para evitar scale-out inesperado
 - `RDS` en `db.t3.micro`, `Single-AZ` y con retencion de backup corta
+- `CloudFront` en `PriceClass_100`
 - `SNS` para alarmas deshabilitado por defecto
 
 La base de datos sigue en subredes privadas; solo las tareas de aplicacion reciben IP publica controlada y mantienen entrada restringida al `ALB` mediante `security groups`.
@@ -140,11 +148,18 @@ Para reducir todavia mas el costo de `qa`, puedes detener manualmente la instanc
 
 ## Ambitos de esta base
 
-Esta implementacion despliega el backend completo y sus dependencias con dos ambientes activos:
+Esta implementacion despliega el backend completo, el frontend estatico y sus dependencias con dos ambientes activos:
 
 - `dev`
 - `qa`
 
 El archivo `infra/live/envs/prod.tfvars` queda marcado como deprecado para evitar un tercer ambiente mientras esta base siga optimizada a costo de entrevista tecnica.
 
-El frontend Angular todavia no se publica desde esta base; una siguiente iteracion natural es `S3 + CloudFront` o `Amplify Hosting`.
+El frontend Angular queda servido por `S3 + CloudFront` y consume la API por la ruta relativa `/api`, que `CloudFront` reenvia al `ALB` del backend. Eso evita exponer otra URL para la API en el navegador y reduce la necesidad de `CORS` en el flujo desplegado.
+
+En `qa`, esta base permite demostrar multiambiente aunque el backend quede hibernado:
+
+- Terraform sigue creando la misma topologia base que en `dev`
+- `CloudFront` y el bucket del frontend quedan creados
+- el frontend se puede publicar desde `promote-qa`
+- `app_enabled = false` deja el servicio `ECS` en `desired_count = 0` hasta que quieras activarlo

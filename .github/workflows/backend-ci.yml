@@ -35,5 +35,8 @@ jobs:
       - name: Build solution
         run: dotnet build StudentsPlatform.sln --configuration Release --no-restore
 
-      - name: Run backend tests
-        run: dotnet test StudentsPlatform.sln --configuration Release --no-build
+      - name: Run domain tests
+        run: dotnet test tests/backend/StudentsPlatform.Domain.Tests/StudentsPlatform.Domain.Tests.csproj --configuration Release --no-build
+
+      - name: Run API integration tests
+        run: dotnet test tests/backend/StudentsPlatform.Api.IntegrationTests/StudentsPlatform.Api.IntegrationTests.csproj --configuration Release --no-build

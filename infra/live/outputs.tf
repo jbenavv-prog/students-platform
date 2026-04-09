@@ -25,3 +25,19 @@ output "alarm_names" {
 output "alarm_topic_arn" {
   value = module.platform.alarm_topic_arn
 }
+
+output "frontend_bucket_name" {
+  value = module.platform.frontend_bucket_name
+}
+
+output "frontend_distribution_id" {
+  value = module.platform.frontend_distribution_id
+}
+
+output "frontend_distribution_domain_name" {
+  value = module.platform.frontend_distribution_domain_name
+}
+
+output "frontend_url" {
+  value = module.platform.frontend_url
+}

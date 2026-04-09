@@ -1,0 +1,115 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TerraformStateAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:GetBucketVersioning"
+      ],
+      "Resource": "arn:aws:s3:::YOUR_TF_STATE_BUCKET"
+    },
+    {
+      "Sid": "TerraformStateObjects",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::YOUR_TF_STATE_BUCKET/*"
+    },
+    {
+      "Sid": "FrontendBucketAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:DeleteBucket",
+        "s3:GetBucketLocation",
+        "s3:GetBucketPolicy",
+        "s3:GetBucketPublicAccessBlock",
+        "s3:GetBucketVersioning",
+        "s3:ListBucket",
+        "s3:PutBucketPolicy",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:PutBucketVersioning",
+        "s3:PutEncryptionConfiguration",
+        "s3:GetEncryptionConfiguration",
+        "s3:DeleteBucketPolicy",
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::YOUR_PROJECT_NAME-*-frontend-*",
+        "arn:aws:s3:::YOUR_PROJECT_NAME-*-frontend-*/*"
+      ]
+    },
+    {
+      "Sid": "EcrManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:CompleteLayerUpload",
+        "ecr:CreateRepository",
+        "ecr:DeleteRepository",
+        "ecr:DeleteRepositoryPolicy",
+        "ecr:DescribeRepositories",
+        "ecr:GetAuthorizationToken",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:GetLifecyclePolicy",
+        "ecr:GetRepositoryPolicy",
+        "ecr:InitiateLayerUpload",
+        "ecr:ListImages",
+        "ecr:PutImage",
+        "ecr:PutLifecyclePolicy",
+        "ecr:SetRepositoryPolicy",
+        "ecr:TagResource",
+        "ecr:UntagResource",
+        "ecr:UploadLayerPart"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "PlatformServicesManagement",
+      "Effect": "Allow",
+      "Action": [
+        "application-autoscaling:*",
+        "cloudfront:*",
+        "cloudwatch:*",
+        "ec2:*",
+        "ecs:*",
+        "elasticloadbalancing:*",
+        "logs:*",
+        "rds:*",
+        "secretsmanager:*",
+        "sns:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IamForEcsTerraformResources",
+      "Effect": "Allow",
+      "Action": [
+        "iam:AttachRolePolicy",
+        "iam:CreateRole",
+        "iam:CreateServiceLinkedRole",
+        "iam:DeleteRole",
+        "iam:DeleteRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:GetRole",
+        "iam:GetRolePolicy",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListRolePolicies",
+        "iam:PassRole",
+        "iam:PutRolePolicy",
+        "iam:TagRole",
+        "iam:UntagRole",
+        "iam:UpdateAssumeRolePolicy"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

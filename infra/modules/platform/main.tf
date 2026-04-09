@@ -130,3 +130,12 @@ module "ecs_app" {
   alarm_actions            = local.effective_alarm_actions
   tags                     = var.tags
 }
+
+module "frontend_static" {
+  source = "../frontend_static"
+
+  project_name = var.project_name
+  environment  = var.environment
+  alb_dns_name = module.ecs_app.alb_dns_name
+  tags         = var.tags
+}
