@@ -11,7 +11,7 @@ data "aws_iam_policy_document" "ecs_task_assume_role" {
 
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/ecs/${var.project_name}-${var.environment}"
-  retention_in_days = 14
+  retention_in_days = var.log_retention_days
 
   tags = var.tags
 }
@@ -21,7 +21,7 @@ resource "aws_ecs_cluster" "this" {
 
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = var.enable_container_insights ? "enabled" : "disabled"
   }
 
   tags = var.tags
@@ -101,6 +101,10 @@ resource "aws_lb_listener" "http" {
 }
 
 locals {
+  effective_desired_count = var.app_enabled ? var.desired_count : 0
+  effective_min_capacity  = var.app_enabled ? var.min_capacity : 0
+  effective_max_capacity  = var.app_enabled ? var.max_capacity : 0
+
   container_environment = concat(
     [
       {
@@ -164,7 +168,7 @@ resource "aws_ecs_service" "this" {
   name                              = "${var.project_name}-${var.environment}"
   cluster                           = aws_ecs_cluster.this.id
   task_definition                   = aws_ecs_task_definition.this.arn
-  desired_count                     = var.desired_count
+  desired_count                     = local.effective_desired_count
   launch_type                       = "FARGATE"
   wait_for_steady_state             = true
   health_check_grace_period_seconds = 60
@@ -177,7 +181,7 @@ resource "aws_ecs_service" "this" {
   network_configuration {
     subnets          = var.app_subnet_ids
     security_groups  = [var.app_security_group_id]
-    assign_public_ip = false
+    assign_public_ip = var.assign_public_ip
   }
 
   load_balancer {
@@ -196,19 +200,23 @@ resource "aws_ecs_service" "this" {
 }
 
 resource "aws_appautoscaling_target" "this" {
-  max_capacity       = var.max_capacity
-  min_capacity       = var.min_capacity
+  count = var.app_enabled ? 1 : 0
+
+  max_capacity       = local.effective_max_capacity
+  min_capacity       = local.effective_min_capacity
   resource_id        = "service/${aws_ecs_cluster.this.name}/${aws_ecs_service.this.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
 
 resource "aws_appautoscaling_policy" "cpu" {
+  count = var.app_enabled ? 1 : 0
+
   name               = "${var.project_name}-${var.environment}-cpu-scaling"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.this.resource_id
-  scalable_dimension = aws_appautoscaling_target.this.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.this.service_namespace
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.this[0].service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {

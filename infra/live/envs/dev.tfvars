@@ -14,6 +14,8 @@ db_subnet_cidrs = [
   "10.30.21.0/24"
 ]
 
+use_nat_gateway = false
+
 db_instance_class       = "db.t3.micro"
 db_allocated_storage    = 20
 backup_retention_period = 1
@@ -22,14 +24,19 @@ skip_final_snapshot     = true
 multi_az                = false
 
 desired_count = 1
+app_enabled   = true
 min_capacity  = 1
-max_capacity  = 2
+max_capacity  = 1
 cpu           = 512
 memory        = 1024
+
+assign_public_ip          = true
+enable_container_insights = false
+log_retention_days        = 3
 
 frontend_allowed_origins = [
   "http://localhost:4200"
 ]
 
-create_alarm_topic = true
+create_alarm_topic = false
 alarm_email_subscriptions = []

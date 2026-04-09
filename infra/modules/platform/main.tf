@@ -7,6 +7,7 @@ module "network" {
   public_subnet_cidrs = var.public_subnet_cidrs
   app_subnet_cidrs    = var.app_subnet_cidrs
   db_subnet_cidrs     = var.db_subnet_cidrs
+  use_nat_gateway     = var.use_nat_gateway
   tags                = var.tags
 }
 
@@ -116,11 +117,15 @@ module "ecs_app" {
   container_image          = var.container_image
   container_port           = var.container_port
   desired_count            = var.desired_count
+  app_enabled              = var.app_enabled
   min_capacity             = var.min_capacity
   max_capacity             = var.max_capacity
   cpu                      = var.cpu
   memory                   = var.memory
   health_check_path        = var.health_check_path
+  assign_public_ip         = var.assign_public_ip
+  enable_container_insights = var.enable_container_insights
+  log_retention_days       = var.log_retention_days
   allowed_origins          = var.frontend_allowed_origins
   alarm_actions            = local.effective_alarm_actions
   tags                     = var.tags

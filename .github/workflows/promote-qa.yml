@@ -1,0 +1,161 @@
+name: promote-qa
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag de imagen ya publicada en ECR"
+        required: true
+        type: string
+      activate_service:
+        description: "Activa temporalmente la aplicacion en qa"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME_PLAN: ${{ vars.AWS_ROLE_TO_ASSUME_PLAN || vars.AWS_ROLE_TO_ASSUME }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials for plan via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_PLAN }}
+
+      - name: Init shared registry state
+        working-directory: infra/shared/ecr
+        run: |
+          cat > backend.hcl <<EOF
+          bucket       = "${TF_STATE_BUCKET}"
+          key          = "shared/ecr/terraform.tfstate"
+          region       = "${AWS_REGION}"
+          encrypt      = true
+          use_lockfile = true
+          EOF
+          terraform init -input=false -backend-config=backend.hcl
+
+      - name: Read shared registry outputs
+        id: registry
+        working-directory: infra/shared/ecr
+        run: echo "repository_url=$(terraform output -raw ecr_repository_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Init qa state
+        working-directory: infra/live
+        run: |
+          cat > backend.hcl <<EOF
+          bucket       = "${TF_STATE_BUCKET}"
+          key          = "live/qa/terraform.tfstate"
+          region       = "${AWS_REGION}"
+          encrypt      = true
+          use_lockfile = true
+          EOF
+          terraform init -input=false -backend-config=backend.hcl
+
+      - name: Plan qa platform and deployment
+        working-directory: infra/live
+        env:
+          REPOSITORY_URL: ${{ steps.registry.outputs.repository_url }}
+        run: |
+          terraform plan \
+            -input=false \
+            -out=tfplan \
+            -var-file=envs/qa.tfvars \
+            -var="aws_region=${AWS_REGION}" \
+            -var="app_enabled=${{ inputs.activate_service }}" \
+            -var="container_image=${REPOSITORY_URL}:${{ inputs.image_tag }}"
+          terraform show -no-color tfplan > tfplan.txt
+
+      - name: Upload qa plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-qa-plan-${{ inputs.image_tag }}
+          path: |
+            infra/live/tfplan
+            infra/live/tfplan.txt
+
+      - name: Publish plan summary
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "## Promote qa plan"
+            echo ""
+            echo "Image tag: ${{ inputs.image_tag }}"
+            echo "Activate service: ${{ inputs.activate_service }}"
+            echo "Workflow run: ${RUN_URL}"
+            echo ""
+            echo '```terraform'
+            sed -n '1,160p' infra/live/tfplan.txt
+            echo '```'
+            echo ""
+            echo "The binary tfplan and text summary are attached as workflow artifacts."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  apply:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: qa
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME_APPLY: ${{ vars.AWS_ROLE_TO_ASSUME_APPLY || vars.AWS_ROLE_TO_ASSUME }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials for apply via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_APPLY }}
+
+      - name: Download qa plan
+        uses: actions/download-artifact@v4
+        with:
+          name: live-qa-plan-${{ inputs.image_tag }}
+          path: infra/live
+
+      - name: Init qa state
+        working-directory: infra/live
+        run: |
+          cat > backend.hcl <<EOF
+          bucket       = "${TF_STATE_BUCKET}"
+          key          = "live/qa/terraform.tfstate"
+          region       = "${AWS_REGION}"
+          encrypt      = true
+          use_lockfile = true
+          EOF
+          terraform init -input=false -backend-config=backend.hcl
+
+      - name: Apply qa platform and deployment
+        working-directory: infra/live
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Smoke test
+        if: ${{ inputs.activate_service }}
+        working-directory: infra/live
+        run: |
+          ALB_DNS="$(terraform output -raw alb_dns_name)"
+          curl --fail --retry 10 --retry-delay 15 "http://${ALB_DNS}/health"

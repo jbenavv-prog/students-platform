@@ -22,7 +22,6 @@ infra/
     envs/
       dev.tfvars
       qa.tfvars
-      prod.tfvars
   modules/
     ecr/
     network/
@@ -47,7 +46,7 @@ Workflows incluidos en esta base:
 - `infra-validate`: formato y validacion estatica de Terraform en PRs
 - `infra-plan`: genera evidencia de `terraform plan` para `shared/ecr` y `live/dev` en PRs, la sube como artifact y actualiza un comentario en el PR
 - `deploy-dev`: construye, publica imagen y despliega `dev`
-- `promote-environment`: separa `plan` y `apply` para promover una imagen ya publicada hacia `qa` o `prod`
+- `promote-qa`: separa `plan` y `apply` para promover una imagen ya publicada hacia `qa`
 
 ## Que es OIDC
 
@@ -94,14 +93,14 @@ El rol debe confiar en el proveedor OIDC de GitHub y permitir:
 - `rds:*`, `ec2:*`, `logs:*`, `cloudwatch:*`, `sns:*`, `iam:*`, `secretsmanager:*`, `application-autoscaling:*` para Terraform
 - `s3:*` sobre el bucket de state
 
-En produccion conviene separar roles:
+En ambientes con aprobacion conviene separar roles:
 
 - uno para `plan`
 - otro para `apply`
 
 El workflow ya soporta esa separacion usando `AWS_ROLE_TO_ASSUME_PLAN` y `AWS_ROLE_TO_ASSUME_APPLY`, con fallback a `AWS_ROLE_TO_ASSUME`.
 
-Si quieres una aprobacion humana explicita antes del `apply` en `prod`, configura `required reviewers` en el environment `prod` de GitHub. Con el workflow actual, el `plan` corre primero y el gate del environment se aplica justo antes del job de `apply`.
+Si quieres una aprobacion humana explicita antes del `apply` en `qa`, configura `required reviewers` en el environment `qa` de GitHub. Con el workflow actual, el `plan` corre primero y el gate del environment se aplica justo antes del job de `apply`.
 
 ## Observabilidad Minima Incluida
 
@@ -121,8 +120,31 @@ Si `create_alarm_topic = true`, el entorno crea un topic `SNS` propio y su ARN s
 
 Los nombres de las alarmas quedan expuestos en el output `alarm_names` y el topic generado en `alarm_topic_arn`.
 
+## Perfil de Costo Bajo
+
+La configuracion activa de `dev` y `qa` esta optimizada para entrevista tecnica y uso liviano:
+
+- `NAT Gateway` deshabilitado en ambos ambientes
+- tareas `ECS` con `assign_public_ip = true` para salir a Internet sin costo fijo de NAT
+- `Container Insights` deshabilitado
+- retencion de logs reducida a `3` dias
+- `desired_count = 1` y `max_capacity = 1` para evitar scale-out inesperado
+- `RDS` en `db.t3.micro`, `Single-AZ` y con retencion de backup corta
+- `SNS` para alarmas deshabilitado por defecto
+
+La base de datos sigue en subredes privadas; solo las tareas de aplicacion reciben IP publica controlada y mantienen entrada restringida al `ALB` mediante `security groups`.
+
+Ademas, `qa` queda hibernado por defecto con `app_enabled = false`. Eso conserva la arquitectura provisionada por Terraform, pero deja el servicio `ECS` en `desired_count = 0` hasta que quieras activarlo en una promocion o demo.
+
+Para reducir todavia mas el costo de `qa`, puedes detener manualmente la instancia `RDS` cuando no la uses. Terraform no modela ese estado transitorio, asi que es una decision operativa fuera del `apply`.
+
 ## Ambitos de esta base
 
-Esta implementacion despliega el backend completo y sus dependencias.
+Esta implementacion despliega el backend completo y sus dependencias con dos ambientes activos:
+
+- `dev`
+- `qa`
+
+El archivo `infra/live/envs/prod.tfvars` queda marcado como deprecado para evitar un tercer ambiente mientras esta base siga optimizada a costo de entrevista tecnica.
 
 El frontend Angular todavia no se publica desde esta base; una siguiente iteracion natural es `S3 + CloudFront` o `Amplify Hosting`.

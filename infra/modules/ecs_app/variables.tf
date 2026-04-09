@@ -47,6 +47,11 @@ variable "desired_count" {
   type = number
 }
 
+variable "app_enabled" {
+  type    = bool
+  default = true
+}
+
 variable "min_capacity" {
   type = number
 }
@@ -66,6 +71,21 @@ variable "memory" {
 variable "health_check_path" {
   type    = string
   default = "/health"
+}
+
+variable "assign_public_ip" {
+  type    = bool
+  default = false
+}
+
+variable "enable_container_insights" {
+  type    = bool
+  default = false
+}
+
+variable "log_retention_days" {
+  type    = number
+  default = 7
 }
 
 variable "allowed_origins" {

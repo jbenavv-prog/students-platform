@@ -23,3 +23,4 @@ artifacts/
 *.tfplan
 *.auto.tfvars
 backend.hcl
+infra/live/envs/*.disabled
