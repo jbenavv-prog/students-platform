@@ -14,6 +14,7 @@
         "StringLike": {
           "token.actions.githubusercontent.com:sub": [
             "repo:YOUR_GITHUB_OWNER/YOUR_REPOSITORY:environment:dev",
+            "repo:YOUR_GITHUB_OWNER/YOUR_REPOSITORY:pull_request",
             "repo:YOUR_GITHUB_OWNER/YOUR_REPOSITORY:ref:refs/heads/main"
           ]
         }

@@ -90,12 +90,11 @@
       "Resource": "*"
     },
     {
-      "Sid": "IamForEcsTerraformResources",
+      "Sid": "ManageProjectEcsRoles",
       "Effect": "Allow",
       "Action": [
         "iam:AttachRolePolicy",
         "iam:CreateRole",
-        "iam:CreateServiceLinkedRole",
         "iam:DeleteRole",
         "iam:DeleteRolePolicy",
         "iam:DetachRolePolicy",
@@ -103,13 +102,52 @@
         "iam:GetRolePolicy",
         "iam:ListAttachedRolePolicies",
         "iam:ListRolePolicies",
-        "iam:PassRole",
         "iam:PutRolePolicy",
         "iam:TagRole",
         "iam:UntagRole",
         "iam:UpdateAssumeRolePolicy"
       ],
-      "Resource": "*"
+      "Resource": [
+        "arn:aws:iam::*:role/YOUR_PROJECT_NAME-*-ecs-execution",
+        "arn:aws:iam::*:role/YOUR_PROJECT_NAME-*-ecs-task"
+      ]
+    },
+    {
+      "Sid": "PassOnlyProjectEcsRolesToEcsTasks",
+      "Effect": "Allow",
+      "Action": [
+        "iam:PassRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::*:role/YOUR_PROJECT_NAME-*-ecs-execution",
+        "arn:aws:iam::*:role/YOUR_PROJECT_NAME-*-ecs-task"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": "ecs-tasks.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "CreateOnlyRequiredServiceLinkedRoles",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateServiceLinkedRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+        "arn:aws:iam::*:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
+        "arn:aws:iam::*:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+      ],
+      "Condition": {
+        "StringLike": {
+          "iam:AWSServiceName": [
+            "ecs.amazonaws.com",
+            "elasticloadbalancing.amazonaws.com",
+            "ecs.application-autoscaling.amazonaws.com"
+          ]
+        }
+      }
     }
   ]
 }

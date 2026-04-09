@@ -38,5 +38,5 @@ frontend_allowed_origins = [
   "http://localhost:4200"
 ]
 
-create_alarm_topic = false
+create_alarm_topic        = false
 alarm_email_subscriptions = []

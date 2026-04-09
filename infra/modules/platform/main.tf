@@ -99,36 +99,36 @@ resource "aws_sns_topic_subscription" "alarm_email" {
 locals {
   effective_alarm_actions = concat(
     var.alarm_actions,
-    aws_sns_topic.alarms[*].arn)
+  aws_sns_topic.alarms[*].arn)
 }
 
 module "ecs_app" {
   source = "../ecs_app"
 
-  project_name             = var.project_name
-  environment              = var.environment
-  aws_region               = var.aws_region
-  vpc_id                   = module.network.vpc_id
-  public_subnet_ids        = module.network.public_subnet_ids
-  app_subnet_ids           = module.network.app_subnet_ids
-  alb_security_group_id    = aws_security_group.alb.id
-  app_security_group_id    = aws_security_group.app.id
-  db_connection_secret_arn = module.database.connection_secret_arn
-  container_image          = var.container_image
-  container_port           = var.container_port
-  desired_count            = var.desired_count
-  app_enabled              = var.app_enabled
-  min_capacity             = var.min_capacity
-  max_capacity             = var.max_capacity
-  cpu                      = var.cpu
-  memory                   = var.memory
-  health_check_path        = var.health_check_path
-  assign_public_ip         = var.assign_public_ip
+  project_name              = var.project_name
+  environment               = var.environment
+  aws_region                = var.aws_region
+  vpc_id                    = module.network.vpc_id
+  public_subnet_ids         = module.network.public_subnet_ids
+  app_subnet_ids            = module.network.app_subnet_ids
+  alb_security_group_id     = aws_security_group.alb.id
+  app_security_group_id     = aws_security_group.app.id
+  db_connection_secret_arn  = module.database.connection_secret_arn
+  container_image           = var.container_image
+  container_port            = var.container_port
+  desired_count             = var.desired_count
+  app_enabled               = var.app_enabled
+  min_capacity              = var.min_capacity
+  max_capacity              = var.max_capacity
+  cpu                       = var.cpu
+  memory                    = var.memory
+  health_check_path         = var.health_check_path
+  assign_public_ip          = var.assign_public_ip
   enable_container_insights = var.enable_container_insights
-  log_retention_days       = var.log_retention_days
-  allowed_origins          = var.frontend_allowed_origins
-  alarm_actions            = local.effective_alarm_actions
-  tags                     = var.tags
+  log_retention_days        = var.log_retention_days
+  allowed_origins           = var.frontend_allowed_origins
+  alarm_actions             = local.effective_alarm_actions
+  tags                      = var.tags
 }
 
 module "frontend_static" {

@@ -23,6 +23,7 @@ jobs:
 
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
+      TF_STATE_BUCKET_REGION: ${{ vars.TF_STATE_BUCKET_REGION || vars.AWS_REGION }}
       AWS_ROLE_TO_ASSUME_PLAN: ${{ vars.AWS_ROLE_TO_ASSUME_PLAN || vars.AWS_ROLE_TO_ASSUME }}
       AWS_ROLE_TO_ASSUME_APPLY: ${{ vars.AWS_ROLE_TO_ASSUME_APPLY || vars.AWS_ROLE_TO_ASSUME }}
       TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
@@ -79,7 +80,7 @@ jobs:
           cat > backend.hcl <<EOF
           bucket       = "${TF_STATE_BUCKET}"
           key          = "shared/ecr/terraform.tfstate"
-          region       = "${AWS_REGION}"
+          region       = "${TF_STATE_BUCKET_REGION}"
           encrypt      = true
           use_lockfile = true
           EOF
@@ -131,7 +132,7 @@ jobs:
           cat > backend.hcl <<EOF
           bucket       = "${TF_STATE_BUCKET}"
           key          = "live/dev/terraform.tfstate"
-          region       = "${AWS_REGION}"
+          region       = "${TF_STATE_BUCKET_REGION}"
           encrypt      = true
           use_lockfile = true
           EOF

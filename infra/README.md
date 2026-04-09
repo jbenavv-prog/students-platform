@@ -79,12 +79,15 @@ terraform -chdir=infra/bootstrap/state apply -var "bucket_name=students-platform
 Variables de repositorio o environment recomendadas:
 
 - `AWS_REGION`
+- `TF_STATE_BUCKET_REGION`
 - `AWS_ROLE_TO_ASSUME`
 - `AWS_ROLE_TO_ASSUME_PLAN`
 - `AWS_ROLE_TO_ASSUME_APPLY`
 - `TF_STATE_BUCKET`
 
 Si solo defines `AWS_ROLE_TO_ASSUME`, los workflows siguen funcionando. Si defines `AWS_ROLE_TO_ASSUME_PLAN` y `AWS_ROLE_TO_ASSUME_APPLY`, los workflows usan esos roles separados segun el paso.
+
+`TF_STATE_BUCKET_REGION` permite separar la region del bucket de state de la region donde despliegas la infraestructura. Si no lo defines, los workflows usan `AWS_REGION`.
 
 Para una guia mas concreta de `OIDC`, trust policies y matriz exacta de variables entre repositorio, `dev` y `qa`, revisa [bootstrap/github_oidc/README.md](/c:/intp/students-platform/infra/bootstrap/github_oidc/README.md).
 

@@ -38,5 +38,5 @@ frontend_allowed_origins = [
   "https://qa.example.com"
 ]
 
-create_alarm_topic = false
+create_alarm_topic        = false
 alarm_email_subscriptions = []

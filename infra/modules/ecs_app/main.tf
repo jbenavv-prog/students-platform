@@ -228,18 +228,18 @@ resource "aws_appautoscaling_policy" "cpu" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "target_5xx" {
-  alarm_name          = "${var.project_name}-${var.environment}-target-5xx"
-  alarm_description   = "Triggers when the application behind the ALB returns 5xx responses."
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 2
-  metric_name         = "HTTPCode_Target_5XX_Count"
-  namespace           = "AWS/ApplicationELB"
-  period              = 60
-  statistic           = "Sum"
-  threshold           = 1
-  treat_missing_data  = "notBreaching"
-  alarm_actions       = var.alarm_actions
-  ok_actions          = var.alarm_actions
+  alarm_name                = "${var.project_name}-${var.environment}-target-5xx"
+  alarm_description         = "Triggers when the application behind the ALB returns 5xx responses."
+  comparison_operator       = "GreaterThanOrEqualToThreshold"
+  evaluation_periods        = 2
+  metric_name               = "HTTPCode_Target_5XX_Count"
+  namespace                 = "AWS/ApplicationELB"
+  period                    = 60
+  statistic                 = "Sum"
+  threshold                 = 1
+  treat_missing_data        = "notBreaching"
+  alarm_actions             = var.alarm_actions
+  ok_actions                = var.alarm_actions
   insufficient_data_actions = []
 
   dimensions = {
@@ -251,18 +251,18 @@ resource "aws_cloudwatch_metric_alarm" "target_5xx" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "unhealthy_hosts" {
-  alarm_name          = "${var.project_name}-${var.environment}-unhealthy-hosts"
-  alarm_description   = "Triggers when the ALB target group reports unhealthy hosts."
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 2
-  metric_name         = "UnHealthyHostCount"
-  namespace           = "AWS/ApplicationELB"
-  period              = 60
-  statistic           = "Average"
-  threshold           = 1
-  treat_missing_data  = "notBreaching"
-  alarm_actions       = var.alarm_actions
-  ok_actions          = var.alarm_actions
+  alarm_name                = "${var.project_name}-${var.environment}-unhealthy-hosts"
+  alarm_description         = "Triggers when the ALB target group reports unhealthy hosts."
+  comparison_operator       = "GreaterThanOrEqualToThreshold"
+  evaluation_periods        = 2
+  metric_name               = "UnHealthyHostCount"
+  namespace                 = "AWS/ApplicationELB"
+  period                    = 60
+  statistic                 = "Average"
+  threshold                 = 1
+  treat_missing_data        = "notBreaching"
+  alarm_actions             = var.alarm_actions
+  ok_actions                = var.alarm_actions
   insufficient_data_actions = []
 
   dimensions = {
@@ -274,18 +274,18 @@ resource "aws_cloudwatch_metric_alarm" "unhealthy_hosts" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
-  alarm_name          = "${var.project_name}-${var.environment}-ecs-cpu-high"
-  alarm_description   = "Triggers when ECS service CPU utilization stays above 80%."
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 3
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/ECS"
-  period              = 60
-  statistic           = "Average"
-  threshold           = 80
-  treat_missing_data  = "notBreaching"
-  alarm_actions       = var.alarm_actions
-  ok_actions          = var.alarm_actions
+  alarm_name                = "${var.project_name}-${var.environment}-ecs-cpu-high"
+  alarm_description         = "Triggers when ECS service CPU utilization stays above 80%."
+  comparison_operator       = "GreaterThanOrEqualToThreshold"
+  evaluation_periods        = 3
+  metric_name               = "CPUUtilization"
+  namespace                 = "AWS/ECS"
+  period                    = 60
+  statistic                 = "Average"
+  threshold                 = 80
+  treat_missing_data        = "notBreaching"
+  alarm_actions             = var.alarm_actions
+  ok_actions                = var.alarm_actions
   insufficient_data_actions = []
 
   dimensions = {

@@ -52,6 +52,12 @@ Adjunta:
 - la politica administrada `ReadOnlyAccess`
 - la politica personalizada `terraform-state-access-policy.json`
 
+La trust policy de `plan` ya contempla estos casos del repo actual:
+
+- jobs con environment `dev`
+- `pull_request` para `infra-plan`
+- ejecuciones manuales o directas sobre `main`
+
 ### Roles de apply
 
 Adjunta a `students-platform-gh-apply-dev` y `students-platform-gh-apply-qa`:
@@ -60,6 +66,11 @@ Adjunta a `students-platform-gh-apply-dev` y `students-platform-gh-apply-qa`:
 
 La politica de `apply` es pragmatica y esta pensada para entrevista tecnica y bootstrap rapido. No intenta ser minimo privilegio estricto.
 
+De todas formas, ya viene endurecida en dos puntos sensibles:
+
+- `iam:PassRole` solo aplica a los roles `ecs-execution` y `ecs-task` creados por este proyecto
+- `iam:CreateServiceLinkedRole` queda limitado a `ECS`, `Elastic Load Balancing` y `Application Auto Scaling` para `ECS`
+
 ## 5. Variables exactas en GitHub
 
 ### Variables de repositorio
@@ -67,6 +78,7 @@ La politica de `apply` es pragmatica y esta pensada para entrevista tecnica y bo
 Estas deben vivir a nivel `Repository -> Settings -> Secrets and variables -> Actions -> Variables`:
 
 - `AWS_REGION`
+- `TF_STATE_BUCKET_REGION`
 - `TF_STATE_BUCKET`
 - `AWS_ROLE_TO_ASSUME_PLAN`
 
@@ -74,6 +86,7 @@ Valores esperados:
 
 ```text
 AWS_REGION=us-east-1
+TF_STATE_BUCKET_REGION=us-east-2
 TF_STATE_BUCKET=students-platform-tf-state
 AWS_ROLE_TO_ASSUME_PLAN=arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/students-platform-gh-plan
 ```
@@ -109,6 +122,7 @@ El workflow `promote-qa` tiene un job `plan` sin `environment`. Por eso ese job 
 En cambio:
 
 - `AWS_REGION`
+- `TF_STATE_BUCKET_REGION`
 - `TF_STATE_BUCKET`
 - `AWS_ROLE_TO_ASSUME_PLAN`
 
