@@ -8,7 +8,17 @@ public static class DatabaseInitializer
 {
     public static async Task InitializeAsync(ApplicationDbContext dbContext, ILogger logger, CancellationToken cancellationToken = default)
     {
-        await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+        var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync(cancellationToken);
+        var pendingMigrationsList = pendingMigrations.ToList();
+
+        if (pendingMigrationsList.Count > 0)
+        {
+            logger.LogInformation(
+                "Applying {PendingMigrationsCount} pending database migrations.",
+                pendingMigrationsList.Count);
+        }
+
+        await dbContext.Database.MigrateAsync(cancellationToken);
 
         if (!await dbContext.Professors.AnyAsync(cancellationToken))
         {

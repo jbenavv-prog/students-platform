@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using StudentsPlatform.Api.Common.HealthChecks;
 using StudentsPlatform.Api.Common.Middleware;
 using StudentsPlatform.Api.Configuration;
 using StudentsPlatform.Api.Modules.Catalog;
@@ -15,6 +18,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 builder.Services.AddApplicationServices();
+builder.Services.AddHealthChecks()
+    .AddCheck(
+        "self",
+        () => HealthCheckResult.Healthy("The API process is running."),
+        tags: ["live", "ready"])
+    .AddCheck<DatabaseHealthCheck>(
+        "database",
+        tags: ["ready"]);
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -32,6 +43,7 @@ builder.Services.AddScoped<IApplicationDbContext>(serviceProvider => serviceProv
 
 var app = builder.Build();
 
+app.UseMiddleware<RequestObservabilityMiddleware>();
 app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseCors("Frontend");
 
@@ -63,7 +75,13 @@ else
         .ExcludeFromDescription();
 }
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
+app.MapHealthChecks("/health/live", HealthCheckResponseWriter.Create(registration => registration.Tags.Contains("live")))
+    .ExcludeFromDescription();
+
+app.MapHealthChecks("/health/ready", HealthCheckResponseWriter.Create(registration => registration.Tags.Contains("ready")))
+    .ExcludeFromDescription();
+
+app.MapHealthChecks("/health", HealthCheckResponseWriter.Create(_ => true))
     .ExcludeFromDescription();
 
 app.MapCatalogEndpoints();
