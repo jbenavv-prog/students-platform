@@ -9,11 +9,13 @@ namespace StudentsPlatform.Application.Students.UpdateStudent;
 
 public sealed class UpdateStudentHandler(
     IApplicationDbContext dbContext,
+    IPasswordHashingService passwordHashingService,
     ILogger<UpdateStudentHandler> logger)
 {
     public async Task<StudentDetailDto> HandleAsync(UpdateStudentCommand command, CancellationToken cancellationToken)
     {
         StudentRequestValidator.ValidateProfile(command.FullName, command.Email, command.ProgramName);
+        StudentRequestValidator.ValidatePasswordOptional(command.Password);
         var selectedSubjects = await StudentDataAccess.LoadSelectedSubjectsAsync(dbContext, command.SubjectIds, cancellationToken);
 
         var student = await StudentDataAccess.GetStudentForUpdateAsync(dbContext, command.StudentId, cancellationToken);
@@ -28,6 +30,12 @@ public sealed class UpdateStudentHandler(
         }
 
         student.UpdateProfile(command.FullName, command.Email, command.ProgramName);
+
+        if (!string.IsNullOrWhiteSpace(command.Password))
+        {
+            var passwordHash = passwordHashingService.HashPassword(command.Password);
+            student.SetPasswordHash(passwordHash);
+        }
 
         if (student.Enrollment is null)
         {

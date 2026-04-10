@@ -27,6 +27,7 @@ public sealed class ProblemDetailsMiddleware(
             RequestValidationException => (StatusCodes.Status400BadRequest, "Validation error"),
             DomainRuleException => (StatusCodes.Status400BadRequest, "Business rule violation"),
             ArgumentException => (StatusCodes.Status400BadRequest, "Invalid request"),
+            UnauthorizedException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
             NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
             ConflictException => (StatusCodes.Status409Conflict, "Conflict"),
             _ => (StatusCodes.Status500InternalServerError, "Unexpected error")

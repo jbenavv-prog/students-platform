@@ -46,4 +46,39 @@ internal static class StudentRequestValidator
             throw new RequestValidationException(errors);
         }
     }
+
+    public static void ValidatePasswordRequired(string? password)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            errors["password"] = ["La contrasena es obligatoria."];
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new RequestValidationException(errors);
+        }
+    }
+
+    public static void ValidatePasswordOptional(string? password)
+    {
+        if (password is null)
+        {
+            return;
+        }
+
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            errors["password"] = ["La contrasena no puede estar vacia."];
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new RequestValidationException(errors);
+        }
+    }
 }

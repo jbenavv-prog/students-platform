@@ -34,7 +34,8 @@ export class StudentFormPage implements OnInit {
     fullName: this.formBuilder.control('', [Validators.required, Validators.maxLength(150)]),
     email: this.formBuilder.control('', [Validators.required, Validators.email]),
     programName: this.formBuilder.control('', [Validators.required, Validators.maxLength(150)]),
-    subjectIds: this.formBuilder.control<string[]>([])
+    subjectIds: this.formBuilder.control<string[]>([]),
+    password: this.formBuilder.control('')
   });
 
   readonly isEditing = computed(() => Boolean(this.studentId()));
@@ -59,6 +60,7 @@ export class StudentFormPage implements OnInit {
     const studentId = this.route.snapshot.paramMap.get('id');
     if (studentId) {
       this.studentId.set(studentId);
+      this.configurePasswordValidation(true);
       const student = await this.facade.loadStudent(studentId);
 
       if (student) {
@@ -66,9 +68,12 @@ export class StudentFormPage implements OnInit {
           fullName: student.fullName,
           email: student.email,
           programName: student.programName,
-          subjectIds: student.enrollment?.subjects.map((subject) => subject.subjectId) ?? []
+          subjectIds: student.enrollment?.subjects.map((subject) => subject.subjectId) ?? [],
+          password: ''
         });
       }
+    } else {
+      this.configurePasswordValidation(false);
     }
 
     this.selectedSubjectIds.set(this.form.controls.subjectIds.value);
@@ -94,7 +99,7 @@ export class StudentFormPage implements OnInit {
     this.submissionError.set(null);
   }
 
-  fieldError(fieldName: 'fullName' | 'email' | 'programName' | 'subjectIds'): string | null {
+  fieldError(fieldName: 'fullName' | 'email' | 'programName' | 'subjectIds' | 'password'): string | null {
     const serverMessage = this.serverFieldErrors()[fieldName]?.[0];
     if (serverMessage) {
       return serverMessage;
@@ -118,6 +123,10 @@ export class StudentFormPage implements OnInit {
 
       if (fieldName === 'email') {
         return 'El correo es obligatorio.';
+      }
+
+      if (fieldName === 'password') {
+        return 'La clave es obligatoria.';
       }
 
       return 'El programa academico es obligatorio.';
@@ -148,6 +157,11 @@ export class StudentFormPage implements OnInit {
       subjectIds: this.form.controls.subjectIds.value
     };
 
+    const password = this.form.controls.password.value.trim();
+    if (password) {
+      request.password = password;
+    }
+
     try {
       const student = this.studentId()
         ? await this.facade.updateStudent(this.studentId()!, request)
@@ -160,6 +174,12 @@ export class StudentFormPage implements OnInit {
       this.serverFieldErrors.set(normalized.fieldErrors);
       this.submissionError.set(normalized.message);
     }
+  }
+
+  private configurePasswordValidation(isEditing: boolean): void {
+    const validators = isEditing ? [] : [Validators.required];
+    this.form.controls.password.setValidators(validators);
+    this.form.controls.password.updateValueAndValidity();
   }
 }
 

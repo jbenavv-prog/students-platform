@@ -51,4 +51,5 @@ export interface StudentUpsertRequest {
   email: string;
   programName: string;
   subjectIds: string[];
+  password?: string;
 }

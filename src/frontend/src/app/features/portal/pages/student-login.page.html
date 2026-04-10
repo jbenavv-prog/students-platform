@@ -1,0 +1,63 @@
+<section class="login-page">
+  <header class="page-header">
+    <div>
+      <div class="page-header__eyebrow">Acceso estudiante</div>
+      <h1 class="page-header__title">Ingresa con tu correo y clave para revisar tu carga academica y tus companeros.</h1>
+      <p class="page-header__description">
+        Usa el correo y la clave registrados para entrar al portal y visualizar los registros de otros estudiantes y los
+        nombres de quienes comparten tus materias.
+      </p>
+    </div>
+
+    <a class="btn btn-secondary" routerLink="/students/new">Crear registro</a>
+  </header>
+
+  <div class="login-layout">
+    <div class="login-layout__main">
+      <app-section-card
+        title="Ingresa con tu correo y clave"
+        subtitle="Si ya estas registrado, escribe el correo y la clave asociados."
+      >
+        <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="form-field">
+            <label for="loginEmail">Correo</label>
+            <input id="loginEmail" type="email" formControlName="email" placeholder="nombre@correo.com" />
+            @if (fieldError('email')) {
+              <div class="field-error">{{ fieldError('email') }}</div>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="loginPassword">Clave</label>
+            <input id="loginPassword" type="password" formControlName="password" placeholder="Tu clave del portal" />
+            @if (fieldError('password')) {
+              <div class="field-error">{{ fieldError('password') }}</div>
+            }
+          </div>
+
+          <button class="btn btn-primary" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Ingresando...' : 'Ingresar' }}
+          </button>
+        </form>
+
+        @if (loginError()) {
+          <div class="alert alert-error login-alert">{{ loginError() }}</div>
+        }
+      </app-section-card>
+    </div>
+
+    <div class="login-layout__side">
+      <app-section-card title="Guia rapida" subtitle="El portal solo se abre con tu clave.">
+        <div class="login-info">
+          <p class="muted">Al ingresar podras:</p>
+          <ul class="login-rules">
+            <li>Ver en linea los registros de otros estudiantes.</li>
+            <li>Ver solo el nombre de companeros por materia.</li>
+            <li>Cambiar tu clave desde la edicion del registro.</li>
+          </ul>
+        </div>
+        <a class="btn btn-secondary btn-block" routerLink="/students/new">Crear nuevo registro</a>
+      </app-section-card>
+    </div>
+  </div>
+</section>

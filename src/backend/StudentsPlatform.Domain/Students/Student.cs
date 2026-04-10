@@ -26,6 +26,8 @@ public sealed class Student
 
     public string ProgramName { get; private set; } = string.Empty;
 
+    public string? PasswordHash { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public Enrollment? Enrollment { get; private set; }
@@ -40,6 +42,11 @@ public sealed class Student
         FullName = Guard.AgainstNullOrWhiteSpace(fullName, nameof(fullName));
         Email = Guard.AgainstInvalidEmail(email, nameof(email));
         ProgramName = Guard.AgainstNullOrWhiteSpace(programName, nameof(programName));
+    }
+
+    public void SetPasswordHash(string passwordHash)
+    {
+        PasswordHash = Guard.AgainstNullOrWhiteSpace(passwordHash, nameof(passwordHash));
     }
 
     public void SetEnrollment(Enrollment enrollment)

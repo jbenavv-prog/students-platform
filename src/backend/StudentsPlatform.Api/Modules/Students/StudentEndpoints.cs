@@ -45,6 +45,7 @@ public static class StudentEndpoints
                 request.FullName,
                 request.Email,
                 request.ProgramName,
+                request.Password ?? string.Empty,
                 request.SubjectIds ?? Array.Empty<Guid>());
 
             var response = await handler.HandleAsync(command, cancellationToken);
@@ -64,6 +65,7 @@ public static class StudentEndpoints
                 request.FullName,
                 request.Email,
                 request.ProgramName,
+                request.Password,
                 request.SubjectIds ?? Array.Empty<Guid>());
 
             var response = await handler.HandleAsync(command, cancellationToken);

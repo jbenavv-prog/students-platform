@@ -1,0 +1,119 @@
+.portal-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.state-message {
+  padding: 1rem 0;
+  color: var(--text-soft);
+}
+
+.page-alert {
+  margin-top: -0.3rem;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.profile-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.subjects-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.subject-detail {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chips-wrap--top {
+  margin-top: 0.7rem;
+}
+
+.search-input {
+  min-width: min(320px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.students-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.student-summary-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 249, 252, 0.9));
+}
+
+.student-summary-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.student-summary-card__header h3 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.student-summary-card__header p {
+  margin-top: 0.35rem;
+  color: var(--text-soft);
+}
+
+.student-summary-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 0;
+}
+
+.student-summary-card__metrics dt {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.student-summary-card__metrics dd {
+  margin: 0.35rem 0 0;
+  color: var(--text-strong);
+  font: 800 1.05rem/1.1 'Manrope', sans-serif;
+}
+
+@media (max-width: 720px) {
+  .student-summary-card__header {
+    flex-direction: column;
+  }
+
+  .student-summary-card__metrics {
+    grid-template-columns: 1fr;
+  }
+}
