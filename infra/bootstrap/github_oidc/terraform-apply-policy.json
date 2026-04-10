@@ -59,6 +59,7 @@
         "ecr:CreateRepository",
         "ecr:DeleteRepository",
         "ecr:DeleteRepositoryPolicy",
+        "ecr:DescribeImages",
         "ecr:DescribeRepositories",
         "ecr:GetAuthorizationToken",
         "ecr:GetDownloadUrlForLayer",

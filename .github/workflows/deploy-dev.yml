@@ -119,7 +119,34 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Check backend image tag
+        id: backend_image
+        env:
+          REPOSITORY_URL: ${{ steps.registry.outputs.repository_url }}
+        run: |
+          REPOSITORY_NAME="${REPOSITORY_URL#*/}"
+
+          set +e
+          aws ecr describe-images \
+            --repository-name "${REPOSITORY_NAME}" \
+            --image-ids "imageTag=${IMAGE_TAG}" \
+            > /tmp/ecr-image.json 2> /tmp/ecr-image.err
+          STATUS=$?
+          set -e
+
+          if [ "${STATUS}" -eq 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Backend image ${REPOSITORY_URL}:${IMAGE_TAG} already exists. Reusing it."
+          elif grep -q "ImageNotFoundException" /tmp/ecr-image.err; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Backend image ${REPOSITORY_URL}:${IMAGE_TAG} does not exist yet. Building it."
+          else
+            cat /tmp/ecr-image.err
+            exit "${STATUS}"
+          fi
+
       - name: Build and push backend image
+        if: steps.backend_image.outputs.exists != 'true'
         env:
           REPOSITORY_URL: ${{ steps.registry.outputs.repository_url }}
         run: |
