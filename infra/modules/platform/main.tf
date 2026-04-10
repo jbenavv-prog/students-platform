@@ -129,6 +129,8 @@ module "ecs_app" {
   allowed_origins           = var.frontend_allowed_origins
   alarm_actions             = local.effective_alarm_actions
   tags                      = var.tags
+
+  depends_on = [module.database]
 }
 
 module "frontend_static" {

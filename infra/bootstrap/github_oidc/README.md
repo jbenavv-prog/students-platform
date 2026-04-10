@@ -70,6 +70,8 @@ De todas formas, ya viene endurecida en dos puntos sensibles:
 
 - `iam:PassRole` solo aplica a los roles `ecs-execution` y `ecs-task` creados por este proyecto
 - `iam:CreateServiceLinkedRole` queda limitado a `ECS`, `Elastic Load Balancing` y `Application Auto Scaling` para `ECS`
+- `iam:CreateServiceLinkedRole` tambien contempla `rds.amazonaws.com` para `AWSServiceRoleForRDS`
+- el bloque `FrontendBucketAccess` incluye tagging del bucket S3 del frontend
 
 ## 5. Variables exactas en GitHub
 

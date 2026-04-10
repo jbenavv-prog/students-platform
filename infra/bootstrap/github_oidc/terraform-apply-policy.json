@@ -30,14 +30,17 @@
         "s3:GetBucketLocation",
         "s3:GetBucketPolicy",
         "s3:GetBucketPublicAccessBlock",
+        "s3:GetBucketTagging",
         "s3:GetBucketVersioning",
         "s3:ListBucket",
         "s3:PutBucketPolicy",
         "s3:PutBucketPublicAccessBlock",
+        "s3:PutBucketTagging",
         "s3:PutBucketVersioning",
         "s3:PutEncryptionConfiguration",
         "s3:GetEncryptionConfiguration",
         "s3:DeleteBucketPolicy",
+        "s3:DeleteBucketTagging",
         "s3:GetObject",
         "s3:PutObject",
         "s3:DeleteObject"
@@ -137,14 +140,16 @@
       "Resource": [
         "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
         "arn:aws:iam::*:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
-        "arn:aws:iam::*:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+        "arn:aws:iam::*:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService",
+        "arn:aws:iam::*:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS"
       ],
       "Condition": {
         "StringLike": {
           "iam:AWSServiceName": [
             "ecs.amazonaws.com",
             "elasticloadbalancing.amazonaws.com",
-            "ecs.application-autoscaling.amazonaws.com"
+            "ecs.application-autoscaling.amazonaws.com",
+            "rds.amazonaws.com"
           ]
         }
       }
