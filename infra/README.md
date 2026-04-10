@@ -149,6 +149,17 @@ Ademas, `qa` queda hibernado por defecto con `app_enabled = false`. Eso conserva
 
 Para reducir todavia mas el costo de `qa`, puedes detener manualmente la instancia `RDS` cuando no la uses. Terraform no modela ese estado transitorio, asi que es una decision operativa fuera del `apply`.
 
+## Hibernar y Activar Dev
+
+El workflow `manage-dev-power` permite cambiar el ambiente `dev` entre:
+
+- `hibernated`: aplica `app_enabled = false`, deja el servicio `ECS` en `desired_count = 0` y opcionalmente detiene `RDS`
+- `active`: inicia `RDS` si estaba detenido, aplica `app_enabled = true` y valida `/health` contra el `ALB`
+
+Esto conserva `S3`, `CloudFront`, `ALB`, `ECR`, logs y state remoto. Sirve para bajar el costo variable de `ECS` y el costo horario de la instancia `RDS`, aunque se siguen cobrando recursos persistentes como storage de `RDS`, backups, `S3`, `ECR`, `CloudWatch` y el `ALB`.
+
+AWS puede mantener una instancia `RDS` detenida por un maximo de 7 dias consecutivos; despues la inicia automaticamente para mantenimiento. Si necesitas cero costo de plataforma por mas tiempo, usa `terraform destroy` sabiendo que al recrear cambiaran URLs como CloudFront y ALB.
+
 ## Ambitos de esta base
 
 Esta implementacion despliega el backend completo, el frontend estatico y sus dependencias con dos ambientes activos:

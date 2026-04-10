@@ -1,0 +1,181 @@
+name: manage-dev-power
+
+on:
+  workflow_dispatch:
+    inputs:
+      power_state:
+        description: "Estado deseado del backend dev"
+        required: true
+        default: hibernated
+        type: choice
+        options:
+          - hibernated
+          - active
+      manage_database:
+        description: "Detener/iniciar RDS junto con ECS"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  manage:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      TF_STATE_BUCKET_REGION: ${{ vars.TF_STATE_BUCKET_REGION || vars.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME_PLAN: ${{ vars.AWS_ROLE_TO_ASSUME_PLAN || vars.AWS_ROLE_TO_ASSUME }}
+      AWS_ROLE_TO_ASSUME_APPLY: ${{ vars.AWS_ROLE_TO_ASSUME_APPLY || vars.AWS_ROLE_TO_ASSUME }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+      APP_ENABLED: ${{ inputs.power_state == 'active' }}
+      DB_INSTANCE_IDENTIFIER: students-platform-dev-postgres
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials for plan via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_PLAN }}
+
+      - name: Init dev state
+        working-directory: infra/live
+        run: |
+          cat > backend.hcl <<EOF
+          bucket       = "${TF_STATE_BUCKET}"
+          key          = "live/dev/terraform.tfstate"
+          region       = "${TF_STATE_BUCKET_REGION}"
+          encrypt      = true
+          use_lockfile = true
+          EOF
+          terraform init -input=false -backend-config=backend.hcl
+
+      - name: Capture current backend image
+        id: current_image
+        working-directory: infra/live
+        run: |
+          TASK_FAMILY="$(terraform output -raw task_definition_family)"
+          CONTAINER_IMAGE="$(aws ecs describe-task-definition \
+            --task-definition "${TASK_FAMILY}" \
+            --query "taskDefinition.containerDefinitions[?name=='api'].image | [0]" \
+            --output text)"
+
+          if [ -z "${CONTAINER_IMAGE}" ] || [ "${CONTAINER_IMAGE}" = "None" ]; then
+            echo "Could not resolve the current backend container image from task family ${TASK_FAMILY}."
+            exit 1
+          fi
+
+          echo "container_image=${CONTAINER_IMAGE}" >> "$GITHUB_OUTPUT"
+
+      - name: Plan dev power state
+        working-directory: infra/live
+        env:
+          CONTAINER_IMAGE: ${{ steps.current_image.outputs.container_image }}
+        run: |
+          terraform plan \
+            -input=false \
+            -out=tfplan \
+            -var-file=envs/dev.tfvars \
+            -var="aws_region=${AWS_REGION}" \
+            -var="app_enabled=${APP_ENABLED}" \
+            -var="container_image=${CONTAINER_IMAGE}"
+          terraform show -no-color tfplan > tfplan.txt
+
+      - name: Publish plan summary
+        run: |
+          {
+            echo "## Dev power plan"
+            echo ""
+            echo "Requested state: ${{ inputs.power_state }}"
+            echo "Manage database: ${{ inputs.manage_database }}"
+            echo ""
+            echo '```terraform'
+            sed -n '1,160p' infra/live/tfplan.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Configure AWS credentials for apply via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_APPLY }}
+
+      - name: Start dev database
+        if: ${{ inputs.power_state == 'active' && inputs.manage_database }}
+        run: |
+          STATUS="$(aws rds describe-db-instances \
+            --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
+            --query "DBInstances[0].DBInstanceStatus" \
+            --output text)"
+
+          if [ "${STATUS}" = "available" ]; then
+            echo "Database ${DB_INSTANCE_IDENTIFIER} is already available."
+          elif [ "${STATUS}" = "stopped" ]; then
+            aws rds start-db-instance --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+            aws rds wait db-instance-available --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+          elif [ "${STATUS}" = "stopping" ]; then
+            aws rds wait db-instance-stopped --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+            aws rds start-db-instance --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+            aws rds wait db-instance-available --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+          else
+            echo "Database ${DB_INSTANCE_IDENTIFIER} is ${STATUS}; waiting for it to become available."
+            aws rds wait db-instance-available --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+          fi
+
+      - name: Apply dev power state
+        working-directory: infra/live
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Stop dev database
+        if: ${{ inputs.power_state == 'hibernated' && inputs.manage_database }}
+        run: |
+          STATUS="$(aws rds describe-db-instances \
+            --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
+            --query "DBInstances[0].DBInstanceStatus" \
+            --output text)"
+
+          if [ "${STATUS}" = "stopped" ]; then
+            echo "Database ${DB_INSTANCE_IDENTIFIER} is already stopped."
+          elif [ "${STATUS}" = "available" ]; then
+            aws rds stop-db-instance --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+            aws rds wait db-instance-stopped --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+          elif [ "${STATUS}" = "starting" ]; then
+            aws rds wait db-instance-available --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+            aws rds stop-db-instance --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+            aws rds wait db-instance-stopped --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+          else
+            echo "Database ${DB_INSTANCE_IDENTIFIER} is ${STATUS}; not stopping it automatically."
+            exit 1
+          fi
+
+      - name: Smoke test
+        if: ${{ inputs.power_state == 'active' }}
+        working-directory: infra/live
+        run: |
+          ALB_DNS="$(terraform output -raw alb_dns_name)"
+          curl --fail --retry 10 --retry-delay 15 "http://${ALB_DNS}/health"
+
+      - name: Publish power summary
+        working-directory: infra/live
+        run: |
+          FRONTEND_URL="$(terraform output -raw frontend_url)"
+          ALB_DNS="$(terraform output -raw alb_dns_name)"
+
+          {
+            echo "## Dev power state"
+            echo ""
+            echo "Requested state: ${{ inputs.power_state }}"
+            echo "Frontend URL: ${FRONTEND_URL}"
+            echo "Backend ALB: http://${ALB_DNS}"
+            echo "Database managed: ${{ inputs.manage_database }}"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -7,6 +7,7 @@ on:
       - ".github/workflows/infra-validate.yml"
       - ".github/workflows/infra-plan.yml"
       - ".github/workflows/deploy-dev.yml"
+      - ".github/workflows/manage-dev-power.yml"
       - ".github/workflows/promote-qa.yml"
   workflow_dispatch:
 
