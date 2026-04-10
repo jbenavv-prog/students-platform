@@ -12,6 +12,18 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 export class AppShellComponent {
   readonly navigation = [
     {
+      label: 'Acceso estudiante',
+      description: 'Correo y clave',
+      link: '/login',
+      exact: true
+    },
+    {
+      label: 'Portal estudiante',
+      description: 'Materias y companeros',
+      link: '/portal',
+      exact: true
+    },
+    {
       label: 'Estudiantes',
       description: 'Listado y seguimiento',
       link: '/students',

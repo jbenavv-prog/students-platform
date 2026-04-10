@@ -30,6 +30,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             builder.Property(student => student.FullName).HasMaxLength(150).IsRequired();
             builder.Property(student => student.Email).HasMaxLength(200).IsRequired();
             builder.Property(student => student.ProgramName).HasMaxLength(150).IsRequired();
+            builder.Property(student => student.PasswordHash).HasMaxLength(500);
             builder.Property(student => student.CreatedAt).IsRequired();
             builder.HasIndex(student => student.Email).IsUnique();
 

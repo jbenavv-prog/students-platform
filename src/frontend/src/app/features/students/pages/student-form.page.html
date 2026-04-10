@@ -3,7 +3,11 @@
     <div>
       <div class="page-header__eyebrow">{{ isEditing() ? 'Edicion' : 'Nuevo registro' }}</div>
       <h1 class="page-header__title">
-        {{ isEditing() ? 'Actualiza el perfil y la inscripcion del estudiante.' : 'Crea un estudiante con una carga academica valida.' }}
+        {{
+          isEditing()
+            ? 'Actualiza el perfil, la inscripcion y la clave si lo necesitas.'
+            : 'Crea un estudiante con una carga academica valida y una clave de acceso.'
+        }}
       </h1>
       <p class="page-header__description">
         La interfaz previene errores antes del envio, pero la API sigue siendo la fuente de verdad.
@@ -18,7 +22,7 @@
   } @else {
     <div class="form-layout">
       <div class="form-layout__main">
-        <app-section-card title="Datos del estudiante" subtitle="Informacion base del registro academico.">
+        <app-section-card title="Datos del estudiante" subtitle="Informacion base y clave de acceso al portal.">
           <form class="form-grid" [formGroup]="form" novalidate>
             <div class="form-field">
               <label for="fullName">Nombre completo</label>
@@ -44,6 +48,21 @@
                   <div class="field-error">{{ fieldError('programName') }}</div>
                 }
               </div>
+            </div>
+
+            <div class="form-field">
+              <label for="password">{{ isEditing() ? 'Nueva clave' : 'Clave' }}</label>
+              <input
+                id="password"
+                type="password"
+                formControlName="password"
+                [placeholder]="
+                  isEditing() ? 'Deja en blanco para mantener la clave actual' : 'Crea una clave para el portal'
+                "
+              />
+              @if (fieldError('password')) {
+                <div class="field-error">{{ fieldError('password') }}</div>
+              }
             </div>
           </form>
         </app-section-card>

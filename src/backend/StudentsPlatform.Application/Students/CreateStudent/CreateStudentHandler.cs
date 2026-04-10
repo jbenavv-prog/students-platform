@@ -10,11 +10,13 @@ namespace StudentsPlatform.Application.Students.CreateStudent;
 
 public sealed class CreateStudentHandler(
     IApplicationDbContext dbContext,
+    IPasswordHashingService passwordHashingService,
     ILogger<CreateStudentHandler> logger)
 {
     public async Task<StudentDetailDto> HandleAsync(CreateStudentCommand command, CancellationToken cancellationToken)
     {
         StudentRequestValidator.ValidateProfile(command.FullName, command.Email, command.ProgramName);
+        StudentRequestValidator.ValidatePasswordRequired(command.Password);
         var selectedSubjects = await StudentDataAccess.LoadSelectedSubjectsAsync(dbContext, command.SubjectIds, cancellationToken);
 
         var emailExists = await dbContext.Students
@@ -31,6 +33,9 @@ public sealed class CreateStudentHandler(
             command.Email,
             command.ProgramName,
             DateTimeOffset.UtcNow);
+
+        var passwordHash = passwordHashingService.HashPassword(command.Password);
+        student.SetPasswordHash(passwordHash);
 
         var enrollment = Enrollment.Create(student.Id, DateTimeOffset.UtcNow);
         enrollment.ReplaceSubjects(selectedSubjects);

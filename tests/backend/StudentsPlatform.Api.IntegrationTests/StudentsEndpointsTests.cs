@@ -20,6 +20,7 @@ public sealed class StudentsEndpointsTests
             "Alice Johnson",
             "alice@example.com",
             "Software Engineering",
+            "Test1234!",
             initialSelection.Select(subject => subject.Id).ToArray()));
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
@@ -38,6 +39,7 @@ public sealed class StudentsEndpointsTests
             "Alice Cooper",
             "alice.cooper@example.com",
             "Computer Science",
+            null,
             updatedSelection.Select(subject => subject.Id).ToArray()));
 
         Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
@@ -83,6 +85,7 @@ public sealed class StudentsEndpointsTests
             "Bob Smith",
             "bob@example.com",
             "Data Science",
+            "Test1234!",
             duplicatedProfessorSelection));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -103,6 +106,7 @@ public sealed class StudentsEndpointsTests
             "Charlie Adams",
             "charlie@example.com",
             "Information Systems",
+            "Test1234!",
             SelectSubjectsFromDistinctProfessors(subjects, 3).Select(subject => subject.Id).ToArray()));
 
         var invalidSelection = SelectSubjectsFromDistinctProfessors(subjects, 4)
@@ -133,6 +137,7 @@ public sealed class StudentsEndpointsTests
             "Diana Prince",
             "diana@example.com",
             "Software Engineering",
+            "Test1234!",
             invalidSelection));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -161,12 +166,14 @@ public sealed class StudentsEndpointsTests
             "Alice Walker",
             "alice.walker@example.com",
             "Software Engineering",
+            "Test1234!",
             [sharedSubject.Id, secondAliceSubject.Id, thirdAliceSubject.Id]));
 
         await CreateStudentAsync(client, new StudentRequest(
             "Bruno Diaz",
             "bruno.diaz@example.com",
             "Software Engineering",
+            "Test1234!",
             [sharedSubject.Id, secondBobSubject.Id, thirdBobSubject.Id]));
 
         var detail = await client.GetFromJsonAsync<StudentDetailResponse>($"/api/students/{alice.Id}");
@@ -229,7 +236,12 @@ public sealed class StudentsEndpointsTests
             errors);
     }
 
-    private sealed record StudentRequest(string FullName, string Email, string ProgramName, IReadOnlyCollection<Guid> SubjectIds);
+    private sealed record StudentRequest(
+        string FullName,
+        string Email,
+        string ProgramName,
+        string? Password,
+        IReadOnlyCollection<Guid> SubjectIds);
 
     private sealed record SubjectsRequest(IReadOnlyCollection<Guid> SubjectIds);
 

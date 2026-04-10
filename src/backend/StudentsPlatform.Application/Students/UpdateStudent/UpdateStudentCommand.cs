@@ -5,4 +5,5 @@ public sealed record UpdateStudentCommand(
     string FullName,
     string Email,
     string ProgramName,
+    string? Password,
     IReadOnlyCollection<Guid> SubjectIds);

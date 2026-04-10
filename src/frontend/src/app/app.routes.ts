@@ -1,10 +1,23 @@
 import { Routes } from '@angular/router';
 
+import { portalGuard } from './core/session/portal.guard';
+
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'students'
+    redirectTo: 'login'
+  },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/portal/pages/student-login.page').then((module) => module.StudentLoginPage)
+  },
+  {
+    path: 'portal',
+    canActivate: [portalGuard],
+    loadComponent: () =>
+      import('./features/portal/pages/student-portal.page').then((module) => module.StudentPortalPage)
   },
   {
     path: 'students',
@@ -28,6 +41,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'students'
+    redirectTo: 'login'
   }
 ];

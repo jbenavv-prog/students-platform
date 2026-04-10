@@ -4,6 +4,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StudentsPlatform.Api.Common.HealthChecks;
 using StudentsPlatform.Api.Common.Middleware;
 using StudentsPlatform.Api.Configuration;
+using StudentsPlatform.Api.Modules.Auth;
 using StudentsPlatform.Api.Modules.Catalog;
 using StudentsPlatform.Api.Modules.Students;
 using StudentsPlatform.Application.Common.Abstractions;
@@ -85,6 +86,7 @@ app.MapHealthChecks("/health", HealthCheckResponseWriter.Create(_ => true))
     .ExcludeFromDescription();
 
 app.MapCatalogEndpoints();
+app.MapAuthEndpoints();
 app.MapStudentEndpoints();
 
 app.Run();

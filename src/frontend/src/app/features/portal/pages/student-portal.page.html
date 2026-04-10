@@ -1,0 +1,164 @@
+<section class="portal-page">
+  @if (!session()) {
+    <app-empty-state
+      icon="00"
+      title="Necesitas ingresar para ver el portal"
+      description="Inicia sesion con tu correo y clave para continuar con la vista de materias y companeros."
+      actionLabel="Ir al login"
+      (action)="router.navigate(['/login'])"
+    ></app-empty-state>
+  } @else {
+    <header class="page-header">
+      <div>
+        <div class="page-header__eyebrow">Portal del estudiante</div>
+        <h1 class="page-header__title">Hola, {{ session()!.fullName }}</h1>
+        <p class="page-header__description">
+          Aqui puedes ver tu carga academica, los companeros por materia y el registro en linea de otros estudiantes.
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <a class="btn btn-secondary" [routerLink]="['/students', session()!.studentId, 'edit']">Actualizar materias</a>
+        <button class="btn btn-danger" type="button" (click)="logout()">Cerrar sesion</button>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <div class="stat-card__label">Materias inscritas</div>
+        <div class="stat-card__value">{{ stats().subjectsCount }}</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-card__label">Creditos totales</div>
+        <div class="stat-card__value">{{ stats().totalCredits }}</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-card__label">Companeros</div>
+        <div class="stat-card__value">{{ stats().classmates }}</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-card__label">Otros registros</div>
+        <div class="stat-card__value">{{ stats().otherStudents }}</div>
+      </article>
+    </section>
+
+    @if (facade.error()) {
+      <div class="alert alert-error page-alert">{{ facade.error() }}</div>
+    }
+
+    <app-section-card
+      title="Mis materias y companeros"
+      subtitle="Solo se muestran los nombres de quienes comparten cada clase."
+    >
+      @if (facade.loading() && !student()) {
+        <div class="state-message">Cargando informacion del estudiante...</div>
+      } @else if (!student()) {
+        <app-empty-state
+          icon="404"
+          title="No encontramos el registro"
+          description="El estudiante ya no existe o el registro fue eliminado."
+          actionLabel="Volver al login"
+          (action)="logout()"
+        ></app-empty-state>
+      } @else if (!student()!.enrollment) {
+        <app-empty-state
+          icon="00"
+          title="Aun no tienes materias inscritas"
+          description="Ingresa a la edicion para seleccionar tus materias y ver companeros."
+          actionLabel="Editar materias"
+          (action)="router.navigate(['/students', session()!.studentId, 'edit'])"
+        ></app-empty-state>
+      } @else {
+        <div class="subjects-detail-grid">
+          @for (subject of student()!.enrollment!.subjects; track subject.subjectId) {
+            <app-section-card [title]="subject.subjectName" [subtitle]="subject.credits + ' creditos'">
+              <div card-action>
+                <span class="chip">{{ subject.professorName }}</span>
+              </div>
+
+              <div class="subject-detail">
+                <div>
+                  <span class="profile-label">Profesor</span>
+                  <strong>{{ subject.professorName }}</strong>
+                </div>
+
+                <div>
+                  <span class="profile-label">Companeros de clase</span>
+                  @if (subject.classmates.length > 0) {
+                    <div class="chips-wrap chips-wrap--top">
+                      @for (classmate of subject.classmates; track classmate) {
+                        <span class="chip">{{ classmate }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <p class="muted">No compartes esta materia con otros estudiantes registrados.</p>
+                  }
+                </div>
+              </div>
+            </app-section-card>
+          }
+        </div>
+      }
+    </app-section-card>
+
+    <app-section-card
+      title="Registros de otros estudiantes"
+      subtitle="Consulta en linea el resumen de los estudiantes registrados."
+    >
+      <div card-action>
+        <input
+          class="search-input"
+          type="search"
+          placeholder="Buscar por nombre, correo o programa"
+          [value]="searchTerm()"
+          (input)="setSearchTerm($any($event.target).value)"
+        />
+      </div>
+
+      @if (facade.loading() && otherStudents().length === 0) {
+        <div class="state-message">Cargando registros...</div>
+      } @else if (otherStudents().length === 0) {
+        <app-empty-state
+          icon="01"
+          title="Aun no hay otros estudiantes"
+          description="Registra mas estudiantes para ver sus resumenes en linea."
+          actionLabel="Crear registro"
+          (action)="router.navigate(['/students/new'])"
+        ></app-empty-state>
+      } @else if (filteredOtherStudents().length === 0) {
+        <app-empty-state
+          icon="01"
+          title="No hay coincidencias"
+          description="Ajusta el filtro para ver otros registros disponibles."
+          actionLabel="Limpiar filtro"
+          (action)="setSearchTerm('')"
+        ></app-empty-state>
+      } @else {
+        <div class="students-grid">
+          @for (student of filteredOtherStudents(); track trackByStudentId($index, student)) {
+            <article class="student-summary-card">
+              <div class="student-summary-card__header">
+                <div>
+                  <h3>{{ student.fullName }}</h3>
+                  <p>{{ student.programName }}</p>
+                </div>
+                <span class="chip">{{ student.subjectsCount }} materias</span>
+              </div>
+
+              <dl class="student-summary-card__metrics">
+                <div>
+                  <dt>Creditos</dt>
+                  <dd>{{ student.credits }}</dd>
+                </div>
+                <div>
+                  <dt>Registro</dt>
+                  <dd>{{ student.createdAt | date: 'mediumDate' }}</dd>
+                </div>
+              </dl>
+            </article>
+          }
+        </div>
+      }
+    </app-section-card>
+  }
+</section>
