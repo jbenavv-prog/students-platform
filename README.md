@@ -12,6 +12,8 @@ https://d3qmdcbwj1io4v.cloudfront.net/
 
 La aplicacion publica el frontend Angular por `CloudFront + S3` y enruta la API por `/api` hacia el backend en `ECS Fargate` mediante un `Application Load Balancer`.
 
+Nota operativa: el ambiente `dev` puede estar hibernado para reducir consumo de creditos. Si la aplicacion o la API no responden, solicita al desarrollador que active los servicios desde el workflow `manage-dev-power`.
+
 ## Resumen Ejecutivo
 
 La solucion implementa un flujo completo de registro academico con CRUD de estudiantes, seleccion de materias, validaciones de negocio criticas, consulta de otros registros y visualizacion de companeros por clase. El objetivo fue construir una base profesional, moderna y facil de explicar en entrevista, sin sobreingenieria.
@@ -169,6 +171,8 @@ curl https://d3qmdcbwj1io4v.cloudfront.net/api/students
 ```
 
 La URL publica de CloudFront se mantiene estable mientras Terraform actualice la misma distribucion. Cambiaria si se destruye/recrea la distribucion o si se pierde el state remoto.
+
+Si estos endpoints no responden, es posible que `ECS` o `RDS` esten apagados por ahorro de costos. En ese caso, pide al desarrollador responsable que active el ambiente `dev` antes de probar la aplicacion.
 
 ## Como Ejecutar Localmente
 
