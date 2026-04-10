@@ -138,14 +138,9 @@
       "Action": [
         "iam:CreateServiceLinkedRole"
       ],
-      "Resource": [
-        "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
-        "arn:aws:iam::*:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
-        "arn:aws:iam::*:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService",
-        "arn:aws:iam::*:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS"
-      ],
+      "Resource": "*",
       "Condition": {
-        "StringLike": {
+        "StringEquals": {
           "iam:AWSServiceName": [
             "ecs.amazonaws.com",
             "elasticloadbalancing.amazonaws.com",

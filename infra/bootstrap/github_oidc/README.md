@@ -69,8 +69,7 @@ La politica de `apply` es pragmatica y esta pensada para entrevista tecnica y bo
 De todas formas, ya viene endurecida en dos puntos sensibles:
 
 - `iam:PassRole` solo aplica a los roles `ecs-execution` y `ecs-task` creados por este proyecto
-- `iam:CreateServiceLinkedRole` queda limitado a `ECS`, `Elastic Load Balancing` y `Application Auto Scaling` para `ECS`
-- `iam:CreateServiceLinkedRole` tambien contempla `rds.amazonaws.com` para `AWSServiceRoleForRDS`
+- `iam:CreateServiceLinkedRole` queda limitado por `iam:AWSServiceName` a `ECS`, `Elastic Load Balancing`, `Application Auto Scaling` para `ECS` y `RDS`
 - el bloque `FrontendBucketAccess` incluye tagging del bucket S3 del frontend
 - el bloque `EcrManagement` incluye `ecr:DescribeImages` para que los reruns reutilicen tags ya publicados sin romper la inmutabilidad de ECR
 
