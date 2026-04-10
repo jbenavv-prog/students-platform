@@ -1,12 +1,44 @@
 ﻿# Students Platform
 
-Aplicacion web para registro de estudiantes construida como una entrega tecnica con criterio de Technical Lead / Software Architect.
+Aplicacion web para gestion academica de estudiantes, construida como una entrega tecnica end-to-end con backend, frontend, infraestructura como codigo en `Terraform` y despliegue automatizado mediante `CI/CD`.
+
+## Aplicacion en Vivo
+
+Ambiente `dev` desplegado en AWS:
+
+```text
+https://d3qmdcbwj1io4v.cloudfront.net/
+```
+
+La aplicacion publica el frontend Angular por `CloudFront + S3` y enruta la API por `/api` hacia el backend en `ECS Fargate` mediante un `Application Load Balancer`.
 
 ## Resumen Ejecutivo
 
 La solucion implementa un flujo completo de registro academico con CRUD de estudiantes, seleccion de materias, validaciones de negocio criticas, consulta de otros registros y visualizacion de companeros por clase. El objetivo fue construir una base profesional, moderna y facil de explicar en entrevista, sin sobreingenieria.
 
+Ademas del producto funcional, el repositorio incluye una plataforma cloud reproducible: `Terraform` provisiona red, `ECR`, `ECS Fargate`, `RDS PostgreSQL`, `S3`, `CloudFront`, `ALB`, logs y alarmas basicas. `GitHub Actions` ejecuta validacion, pruebas, build, publicacion de imagen Docker y despliegue continuo del ambiente `dev`.
+
 El backend esta organizado como `Modular Monolith` con `Vertical Slice Architecture` y limites pragmaticos de `Clean Architecture`. El frontend usa `Angular 19` con `standalone components`, formularios reactivos tipados y una UI sobria orientada a demostracion ejecutiva.
+
+## Flujo DevOps
+
+- `Terraform` define y actualiza la infraestructura de AWS desde `infra/`.
+- `GitHub Actions` autentica contra AWS con `OIDC`, sin llaves largas en el repositorio.
+- El workflow `deploy-dev` compila backend/frontend, ejecuta pruebas, publica imagen en `ECR`, aplica Terraform y sube el frontend a `S3`.
+- `CloudFront` expone la aplicacion web y redirige `/api/*` al backend.
+- El workflow `manage-dev-power` permite hibernar o activar `dev` para reducir consumo de creditos.
+
+```mermaid
+flowchart LR
+  GH[GitHub Actions CI/CD] --> TF[Terraform]
+  TF --> AWS[AWS dev]
+  GH --> ECR[ECR Backend Image]
+  AWS --> CF[CloudFront]
+  CF --> S3[S3 Frontend]
+  CF --> ALB[Application Load Balancer]
+  ALB --> ECS[ECS Fargate API]
+  ECS --> RDS[(RDS PostgreSQL)]
+```
 
 ## Arquitectura Propuesta
 
@@ -32,6 +64,9 @@ flowchart LR
 - Frontend: `Angular 19`
 - Persistencia: `PostgreSQL 16`
 - ORM: `Entity Framework Core`
+- Infraestructura cloud: `Terraform`
+- Cloud: `AWS ECS Fargate`, `RDS PostgreSQL`, `S3`, `CloudFront`, `ALB`, `ECR`, `CloudWatch`
+- CI/CD: `GitHub Actions` con `OIDC` hacia AWS
 - Testing backend: `xUnit`
 - Integracion API: `WebApplicationFactory` + `SQLite in-memory`
 - Documentacion: `Markdown` + `Mermaid`
@@ -99,7 +134,7 @@ Reglas implementadas explicitamente:
 - `Frontend Lead`: estructuro contratos, facade y base del consumo API.
 - `Technical Lead`: integro y completo la UI Angular, verifico compilacion, alinio docs y cerro entregables.
 - `QA / Test Engineer`: definio estrategia QA, matriz de pruebas y checklist manual.
-- `DevOps / IaC Advisor`: dejo `compose.yml` como base local y ADR para Terraform opcional.
+- `DevOps / IaC Advisor`: dejo `compose.yml`, Terraform para AWS, OIDC y workflows de CI/CD.
 
 ## Entregables Incluidos
 
@@ -107,15 +142,33 @@ Reglas implementadas explicitamente:
 - README profesional
 - `docs/ARCHITECTURE.md`
 - `docs/DELIVERY_DOCUMENT.md`
-- ADRs minimos y ADR de Terraform opcional
+- ADRs minimos y documentacion de infraestructura
 - diagramas Mermaid
 - estrategia QA, matriz de pruebas y checklist manual
 - archivo `.http` para probar endpoints
 - `compose.yml` para PostgreSQL local
 - `Dockerfile` para contenerizar el backend
 - base de `Terraform` para AWS en `infra/`
-- workflows de `GitHub Actions` para validacion y despliegue
+- workflows de `GitHub Actions` para validacion, plan, despliegue, promocion y control de energia de `dev`
 - pruebas automatizadas ejecutables
+
+## Como Probar el Ambiente Dev
+
+Frontend:
+
+```text
+https://d3qmdcbwj1io4v.cloudfront.net/
+```
+
+Endpoints principales por CloudFront:
+
+```bash
+curl https://d3qmdcbwj1io4v.cloudfront.net/api/subjects
+curl https://d3qmdcbwj1io4v.cloudfront.net/api/professors
+curl https://d3qmdcbwj1io4v.cloudfront.net/api/students
+```
+
+La URL publica de CloudFront se mantiene estable mientras Terraform actualice la misma distribucion. Cambiaria si se destruye/recrea la distribucion o si se pierde el state remoto.
 
 ## Como Ejecutar Localmente
 
@@ -218,5 +271,5 @@ Limitacion de entorno durante esta sesion:
 - migraciones versionadas para entornos productivos
 - exportacion de reportes
 - observabilidad ampliada con metricas y trazas
-- IaC minima en Terraform si el despliegue cloud entra en alcance
+- dominio propio y certificado administrado para reemplazar la URL generada de CloudFront
 
