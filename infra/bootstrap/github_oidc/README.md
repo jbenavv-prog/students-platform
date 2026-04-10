@@ -56,7 +56,7 @@ La trust policy de `plan` ya contempla estos casos del repo actual:
 
 - jobs con environment `dev`
 - `pull_request` para `infra-plan`
-- ejecuciones manuales o directas sobre `main`
+- ejecuciones manuales o directas sobre `master`
 
 ### Roles de apply
 
@@ -146,7 +146,7 @@ Opcionalmente, agrega `required reviewers` en `qa` para que el `apply` necesite 
 
 Una vez creados bucket, provider, roles y variables:
 
-1. Haz merge a `main` para disparar `deploy-dev`.
+1. Haz push o merge a `master` para disparar `deploy-dev`.
 2. Verifica que `dev` cree `ECR`, backend, frontend, `CloudFront` y base de datos.
 3. Ejecuta `promote-qa` con `activate_service = false` para dejar `qa` provisionado pero hibernado.
 4. Cuando quieras demostrar la promocion completa, vuelve a correr `promote-qa` con `activate_service = true`.
