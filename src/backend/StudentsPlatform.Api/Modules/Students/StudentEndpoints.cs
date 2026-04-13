@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using StudentsPlatform.Api.Common.Security;
 using StudentsPlatform.Api.Modules.Students.Requests;
 using StudentsPlatform.Application.Students.CreateStudent;
 using StudentsPlatform.Application.Students.DeleteStudent;
@@ -13,7 +15,8 @@ public static class StudentEndpoints
     public static IEndpointRouteBuilder MapStudentEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/students")
-            .WithTags("Students");
+            .WithTags("Students")
+            .RequireAuthorization();
 
         group.MapGet("/", async (
             GetStudentsHandler handler,
@@ -27,9 +30,15 @@ public static class StudentEndpoints
 
         group.MapGet("/{studentId:guid}", async (
             Guid studentId,
+            ClaimsPrincipal user,
             GetStudentByIdHandler handler,
             CancellationToken cancellationToken) =>
         {
+            if (!user.CanAccessStudent(studentId))
+            {
+                return Results.Forbid();
+            }
+
             var response = await handler.HandleAsync(studentId, cancellationToken);
             return Results.Ok(response);
         })
@@ -51,15 +60,22 @@ public static class StudentEndpoints
             var response = await handler.HandleAsync(command, cancellationToken);
             return Results.Created($"/api/students/{response.Id}", response);
         })
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("CreateStudent")
         .WithSummary("Creates a student and optionally stores the initial subject selection.");
 
         group.MapPut("/{studentId:guid}", async (
             Guid studentId,
+            ClaimsPrincipal user,
             UpsertStudentRequest request,
             UpdateStudentHandler handler,
             CancellationToken cancellationToken) =>
         {
+            if (!user.CanAccessStudent(studentId))
+            {
+                return Results.Forbid();
+            }
+
             var command = new UpdateStudentCommand(
                 studentId,
                 request.FullName,
@@ -76,10 +92,16 @@ public static class StudentEndpoints
 
         group.MapPut("/{studentId:guid}/subjects", async (
             Guid studentId,
+            ClaimsPrincipal user,
             UpdateStudentSubjectsRequest request,
             UpdateStudentSubjectsHandler handler,
             CancellationToken cancellationToken) =>
         {
+            if (!user.CanAccessStudent(studentId))
+            {
+                return Results.Forbid();
+            }
+
             var command = new UpdateStudentSubjectsCommand(
                 studentId,
                 request.SubjectIds ?? Array.Empty<Guid>());
@@ -98,6 +120,7 @@ public static class StudentEndpoints
             await handler.HandleAsync(studentId, cancellationToken);
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.AdminOnly)
         .WithName("DeleteStudent")
         .WithSummary("Deletes a student and the associated enrollment.");
 

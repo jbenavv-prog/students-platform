@@ -195,6 +195,11 @@ dotnet run --project .\src\backend\StudentsPlatform.Api
 
 La API queda disponible en `http://localhost:5277` y Swagger en `http://localhost:5277/swagger`.
 
+Acceso administrador demo para el primer ingreso local:
+
+- correo: `admin@students.local`
+- clave: `Admin1234!`
+
 ### 3. Frontend
 
 ```powershell
@@ -219,6 +224,7 @@ Usa el archivo [`students-platform.http`](./students-platform.http) desde VS Cod
 
 Endpoints principales:
 
+- `POST /api/auth/login`
 - `GET /api/students`
 - `GET /api/students/{id}`
 - `POST /api/students`
@@ -228,13 +234,20 @@ Endpoints principales:
 - `GET /api/subjects`
 - `GET /api/professors`
 
+Reglas de acceso:
+
+- `POST /api/auth/login` es anonimo
+- catalogo y consultas requieren sesion autenticada
+- CRUD administrativo de estudiantes requiere rol `Administrador`
+- `Estudiante` solo puede consultar y actualizar su propio registro
+
 Los errores se exponen como `ProblemDetails` con `traceId` y, cuando aplica, diccionario `errors` por campo.
 
 ## Verificacion Realizada
 
 Validado en este workspace:
 
-- `dotnet test StudentsPlatform.sln` -> 12 pruebas pasando
+- `dotnet test StudentsPlatform.sln` -> 17 pruebas pasando
 - `npm run build` en `src/frontend` -> compilacion exitosa
 
 Limitacion de entorno durante esta sesion:
@@ -271,7 +284,6 @@ Limitacion de entorno durante esta sesion:
 
 ## Mejoras Futuras
 
-- autenticacion y autorizacion por roles
 - migraciones versionadas para entornos productivos
 - exportacion de reportes
 - observabilidad ampliada con metricas y trazas

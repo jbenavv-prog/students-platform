@@ -8,7 +8,8 @@ public static class CatalogEndpoints
     public static IEndpointRouteBuilder MapCatalogEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api")
-            .WithTags("Catalog");
+            .WithTags("Catalog")
+            .RequireAuthorization();
 
         group.MapGet("/subjects", async (
             GetSubjectsHandler handler,

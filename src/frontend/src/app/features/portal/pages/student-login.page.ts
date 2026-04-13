@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { normalizeApiError } from '../../../core/api/api-error.mapper';
@@ -12,7 +12,7 @@ import { AuthApiService } from '../data-access/auth.api';
 @Component({
   selector: 'app-student-login-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, SectionCardComponent],
+  imports: [CommonModule, ReactiveFormsModule, SectionCardComponent],
   templateUrl: './student-login.page.html',
   styleUrl: './student-login.page.scss'
 })
@@ -64,7 +64,7 @@ export class StudentLoginPage {
       const password = this.form.controls.password.value;
       const session = await firstValueFrom(this.authApi.login({ email, password }));
       this.sessionService.setSession(session);
-      await this.router.navigate(['/portal']);
+      await this.router.navigateByUrl(this.sessionService.defaultRoute());
     } catch (error) {
       this.loginError.set(normalizeApiError(error).message);
     } finally {

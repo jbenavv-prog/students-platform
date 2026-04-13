@@ -10,6 +10,7 @@ namespace StudentsPlatform.Application.Students.CreateStudent;
 
 public sealed class CreateStudentHandler(
     IApplicationDbContext dbContext,
+    IAdminAccountProvider adminAccountProvider,
     IPasswordHashingService passwordHashingService,
     ILogger<CreateStudentHandler> logger)
 {
@@ -23,7 +24,7 @@ public sealed class CreateStudentHandler(
             .AsNoTracking()
             .AnyAsync(student => student.Email == command.Email.Trim(), cancellationToken);
 
-        if (emailExists)
+        if (emailExists || adminAccountProvider.FindByEmail(command.Email.Trim()) is not null)
         {
             throw new ConflictException("Ya existe un estudiante registrado con ese correo.");
         }

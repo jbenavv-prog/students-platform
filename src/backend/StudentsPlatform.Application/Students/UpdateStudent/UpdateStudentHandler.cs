@@ -9,6 +9,7 @@ namespace StudentsPlatform.Application.Students.UpdateStudent;
 
 public sealed class UpdateStudentHandler(
     IApplicationDbContext dbContext,
+    IAdminAccountProvider adminAccountProvider,
     IPasswordHashingService passwordHashingService,
     ILogger<UpdateStudentHandler> logger)
 {
@@ -24,7 +25,7 @@ public sealed class UpdateStudentHandler(
             .AsNoTracking()
             .AnyAsync(entity => entity.Id != command.StudentId && entity.Email == command.Email.Trim(), cancellationToken);
 
-        if (emailExists)
+        if (emailExists || adminAccountProvider.FindByEmail(command.Email.Trim()) is not null)
         {
             throw new ConflictException("Ya existe un estudiante registrado con ese correo.");
         }

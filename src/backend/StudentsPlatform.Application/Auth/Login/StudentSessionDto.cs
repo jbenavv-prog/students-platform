@@ -4,4 +4,6 @@ public sealed record StudentSessionDto(
     Guid Id,
     string FullName,
     string Email,
-    string ProgramName);
+    string? ProgramName,
+    string Role,
+    string AccessToken);

@@ -1,4 +1,4 @@
-﻿<section class="student-detail-page">
+<section class="student-detail-page">
   @if (facade.loading() && !student()) {
     <div class="state-message">Cargando detalle del estudiante...</div>
   } @else if (!student()) {
@@ -6,8 +6,8 @@
       icon="404"
       title="No encontramos el detalle solicitado"
       description="Puede que el estudiante haya sido eliminado o que el identificador no exista."
-      actionLabel="Volver al listado"
-      (action)="router.navigate(['/students'])"
+      actionLabel="Volver"
+      (action)="router.navigate([backLink()])"
     ></app-empty-state>
   } @else {
     <header class="page-header">
@@ -20,9 +20,13 @@
       </div>
 
       <div class="header-actions">
-        <a class="btn btn-secondary" routerLink="/students">Volver</a>
-        <a class="btn btn-secondary" [routerLink]="['/students', student()!.id, 'edit']">Editar</a>
-        <button class="btn btn-danger" type="button" (click)="deleteStudent()">Eliminar</button>
+        <a class="btn btn-secondary" [routerLink]="backLink()">Volver</a>
+        @if (canEdit()) {
+          <a class="btn btn-secondary" [routerLink]="['/students', student()!.id, 'edit']">Editar</a>
+        }
+        @if (canDelete()) {
+          <button class="btn btn-danger" type="button" (click)="deleteStudent()">Eliminar</button>
+        }
       </div>
     </header>
 

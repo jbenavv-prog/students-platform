@@ -1,15 +1,13 @@
 <section class="login-page">
   <header class="page-header">
     <div>
-      <div class="page-header__eyebrow">Acceso estudiante</div>
-      <h1 class="page-header__title">Ingresa con tu correo y clave para revisar tu carga academica y tus companeros.</h1>
+      <div class="page-header__eyebrow">Acceso a la plataforma</div>
+      <h1 class="page-header__title">Ingresa con tu correo y clave para entrar como administrador o estudiante.</h1>
       <p class="page-header__description">
-        Usa el correo y la clave registrados para entrar al portal y visualizar los registros de otros estudiantes y los
-        nombres de quienes comparten tus materias.
+        El administrador gestiona el registro academico. El estudiante entra a su portal para revisar materias,
+        companeros y actualizar su propio perfil.
       </p>
     </div>
-
-    <a class="btn btn-secondary" routerLink="/students/new">Crear registro</a>
   </header>
 
   <div class="login-layout">
@@ -47,16 +45,21 @@
     </div>
 
     <div class="login-layout__side">
-      <app-section-card title="Guia rapida" subtitle="El portal solo se abre con tu clave.">
+      <app-section-card title="Roles disponibles" subtitle="Cada rol aterriza en una experiencia distinta.">
         <div class="login-info">
           <p class="muted">Al ingresar podras:</p>
           <ul class="login-rules">
-            <li>Ver en linea los registros de otros estudiantes.</li>
-            <li>Ver solo el nombre de companeros por materia.</li>
-            <li>Cambiar tu clave desde la edicion del registro.</li>
+            <li>Como administrador: crear, editar y eliminar estudiantes.</li>
+            <li>Como estudiante: ver tu carga academica y los companeros por materia.</li>
+            <li>Como estudiante: actualizar tu propio registro sin entrar al panel administrativo.</li>
           </ul>
         </div>
-        <a class="btn btn-secondary btn-block" routerLink="/students/new">Crear nuevo registro</a>
+
+        <div class="login-credentials">
+          <strong>Administrador demo</strong>
+          <span>Correo: admin&#64;students.local</span>
+          <span>Clave: Admin1234!</span>
+        </div>
       </app-section-card>
     </div>
   </div>

@@ -1,10 +1,14 @@
 import { Injectable, signal } from '@angular/core';
 
+export type UserRole = 'administrador' | 'estudiante';
+
 export interface StudentSessionState {
-  studentId: string;
+  userId: string;
   fullName: string;
   email: string;
-  programName: string;
+  programName: string | null;
+  role: UserRole;
+  accessToken: string;
 }
 
 @Injectable({
@@ -24,6 +28,24 @@ export class StudentSessionService {
   clearSession(): void {
     this.sessionSignal.set(null);
     this.persist(null);
+  }
+
+  defaultRoute(): string {
+    const session = this.sessionSignal();
+    if (!session) {
+      return '/login';
+    }
+
+    return session.role === 'administrador' ? '/students' : '/portal';
+  }
+
+  canAccessStudent(studentId: string | null): boolean {
+    const session = this.sessionSignal();
+    if (!session || !studentId) {
+      return false;
+    }
+
+    return session.role === 'administrador' || session.userId === studentId;
   }
 
   private readFromStorage(): StudentSessionState | null {

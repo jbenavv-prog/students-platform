@@ -30,7 +30,7 @@ export class StudentPortalPage implements OnInit {
   });
 
   readonly otherStudents = computed(() => {
-    const currentId = this.session()?.studentId;
+    const currentId = this.session()?.userId;
     if (!currentId) {
       return [];
     }
@@ -77,8 +77,8 @@ export class StudentPortalPage implements OnInit {
     }
 
     const current = this.facade.studentDetail();
-    if (!current || current.id !== session.studentId) {
-      await this.facade.loadStudent(session.studentId);
+    if (!current || current.id !== session.userId) {
+      await this.facade.loadStudent(session.userId);
     }
   }
 

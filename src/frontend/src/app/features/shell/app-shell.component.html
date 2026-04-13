@@ -1,4 +1,4 @@
-﻿<div class="shell">
+<div class="shell">
   <aside class="shell__sidebar">
     <div class="brand-card">
       <div class="brand-card__eyebrow">Students Platform</div>
@@ -9,7 +9,7 @@
     </div>
 
     <nav class="nav-card" aria-label="Navegacion principal">
-      @for (item of navigation; track item.link) {
+      @for (item of navigation(); track item.link) {
         <a
           class="nav-link"
           [routerLink]="item.link"
@@ -21,6 +21,19 @@
         </a>
       }
     </nav>
+
+    <section class="session-card">
+      @if (session()) {
+        <span class="chip">{{ roleLabel() }}</span>
+        <strong>{{ session()!.fullName }}</strong>
+        <p>{{ session()!.email }}</p>
+        <button class="btn btn-secondary btn-block" type="button" (click)="logout()">Cerrar sesion</button>
+      } @else {
+        <span class="chip">Invitado</span>
+        <strong>Acceso protegido por rol</strong>
+        <p>Inicia sesion para abrir el panel administrativo o el portal del estudiante.</p>
+      }
+    </section>
 
     <section class="insight-card">
       <span class="chip">Reglas activas</span>

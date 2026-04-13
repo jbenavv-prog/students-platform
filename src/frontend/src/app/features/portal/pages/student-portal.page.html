@@ -18,7 +18,7 @@
       </div>
 
       <div class="header-actions">
-        <a class="btn btn-secondary" [routerLink]="['/students', session()!.studentId, 'edit']">Actualizar materias</a>
+        <a class="btn btn-secondary" [routerLink]="['/students', session()!.userId, 'edit']">Actualizar materias</a>
         <button class="btn btn-danger" type="button" (click)="logout()">Cerrar sesion</button>
       </div>
     </header>
@@ -66,7 +66,7 @@
           title="Aun no tienes materias inscritas"
           description="Ingresa a la edicion para seleccionar tus materias y ver companeros."
           actionLabel="Editar materias"
-          (action)="router.navigate(['/students', session()!.studentId, 'edit'])"
+          (action)="router.navigate(['/students', session()!.userId, 'edit'])"
         ></app-empty-state>
       } @else {
         <div class="subjects-detail-grid">
@@ -121,9 +121,9 @@
         <app-empty-state
           icon="01"
           title="Aun no hay otros estudiantes"
-          description="Registra mas estudiantes para ver sus resumenes en linea."
-          actionLabel="Crear registro"
-          (action)="router.navigate(['/students/new'])"
+          description="Cuando existan otros registros podras consultarlos desde este portal."
+          actionLabel="Actualizar mi perfil"
+          (action)="router.navigate(['/students', session()!.userId, 'edit'])"
         ></app-empty-state>
       } @else if (filteredOtherStudents().length === 0) {
         <app-empty-state

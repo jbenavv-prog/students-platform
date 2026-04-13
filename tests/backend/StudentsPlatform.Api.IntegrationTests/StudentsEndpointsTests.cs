@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using StudentsPlatform.Api.IntegrationTests.Infrastructure;
@@ -12,6 +13,7 @@ public sealed class StudentsEndpointsTests
     {
         using var factory = new StudentsPlatformApiFactory();
         using var client = factory.CreateClient();
+        await AuthenticateAsAdminAsync(client);
 
         var subjects = await GetSubjectsAsync(client);
         var initialSelection = SelectSubjectsFromDistinctProfessors(subjects, 3);
@@ -64,6 +66,7 @@ public sealed class StudentsEndpointsTests
     {
         using var factory = new StudentsPlatformApiFactory();
         using var client = factory.CreateClient();
+        await AuthenticateAsAdminAsync(client);
 
         var subjects = await GetSubjectsAsync(client);
         var duplicatedProfessorSelection = subjects
@@ -100,6 +103,7 @@ public sealed class StudentsEndpointsTests
     {
         using var factory = new StudentsPlatformApiFactory();
         using var client = factory.CreateClient();
+        await AuthenticateAsAdminAsync(client);
 
         var subjects = await GetSubjectsAsync(client);
         var createdStudent = await CreateStudentAsync(client, new StudentRequest(
@@ -127,6 +131,7 @@ public sealed class StudentsEndpointsTests
     {
         using var factory = new StudentsPlatformApiFactory();
         using var client = factory.CreateClient();
+        await AuthenticateAsAdminAsync(client);
 
         var subjects = await GetSubjectsAsync(client);
         var invalidSelection = SelectSubjectsFromDistinctProfessors(subjects, 2)
@@ -152,6 +157,7 @@ public sealed class StudentsEndpointsTests
     {
         using var factory = new StudentsPlatformApiFactory();
         using var client = factory.CreateClient();
+        await AuthenticateAsAdminAsync(client);
 
         var subjects = await GetSubjectsAsync(client);
         var distinctSubjects = SelectSubjectsFromDistinctProfessors(subjects, 5);
@@ -187,6 +193,89 @@ public sealed class StudentsEndpointsTests
         Assert.Contains("Bruno Diaz", sharedSubjectDetail.Classmates);
         Assert.DoesNotContain("Alice Walker", sharedSubjectDetail.Classmates);
         Assert.Empty(privateSubjectDetail.Classmates);
+    }
+
+    [Fact]
+    public async Task StudentRole_ShouldOnlyAccessOwnDetail()
+    {
+        using var factory = new StudentsPlatformApiFactory();
+        using var client = factory.CreateClient();
+        await AuthenticateAsAdminAsync(client);
+
+        var subjects = await GetSubjectsAsync(client);
+        var studentSelection = SelectSubjectsFromDistinctProfessors(subjects, 3);
+
+        var alice = await CreateStudentAsync(client, new StudentRequest(
+            "Alice Access",
+            "alice.access@example.com",
+            "Software Engineering",
+            "Test1234!",
+            studentSelection.Select(subject => subject.Id).ToArray()));
+
+        var bob = await CreateStudentAsync(client, new StudentRequest(
+            "Bob Access",
+            "bob.access@example.com",
+            "Computer Science",
+            "Test1234!",
+            SelectSubjectsFromDistinctProfessors(subjects.Skip(1).ToList(), 3).Select(subject => subject.Id).ToArray()));
+
+        await AuthenticateAsStudentAsync(client, "alice.access@example.com", "Test1234!");
+
+        var ownResponse = await client.GetAsync($"/api/students/{alice.Id}");
+        var otherResponse = await client.GetAsync($"/api/students/{bob.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, ownResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, otherResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task StudentRole_ShouldNotCreateAnotherStudent()
+    {
+        using var factory = new StudentsPlatformApiFactory();
+        using var client = factory.CreateClient();
+        await AuthenticateAsAdminAsync(client);
+
+        var subjects = await GetSubjectsAsync(client);
+        var studentSelection = SelectSubjectsFromDistinctProfessors(subjects, 3);
+
+        await CreateStudentAsync(client, new StudentRequest(
+            "Student User",
+            "student.user@example.com",
+            "Software Engineering",
+            "Test1234!",
+            studentSelection.Select(subject => subject.Id).ToArray()));
+
+        await AuthenticateAsStudentAsync(client, "student.user@example.com", "Test1234!");
+
+        var response = await client.PostAsJsonAsync("/api/students", new StudentRequest(
+            "Forbidden Creation",
+            "forbidden.creation@example.com",
+            "Industrial Engineering",
+            "Test1234!",
+            studentSelection.Select(subject => subject.Id).ToArray()));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    private static async Task AuthenticateAsAdminAsync(HttpClient client)
+    {
+        await AuthenticateAsync(client, new LoginRequest("admin@students.local", "Admin1234!"));
+    }
+
+    private static async Task AuthenticateAsStudentAsync(HttpClient client, string email, string password)
+    {
+        await AuthenticateAsync(client, new LoginRequest(email, password));
+    }
+
+    private static async Task AuthenticateAsync(HttpClient client, LoginRequest request)
+    {
+        client.DefaultRequestHeaders.Authorization = null;
+
+        var response = await client.PostAsJsonAsync("/api/auth/login", request);
+        response.EnsureSuccessStatusCode();
+
+        var session = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session!.AccessToken);
     }
 
     private static async Task<List<SubjectResponse>> GetSubjectsAsync(HttpClient client)
@@ -235,6 +324,10 @@ public sealed class StudentsEndpointsTests
             root.TryGetProperty("detail", out var detail) ? detail.GetString() : null,
             errors);
     }
+
+    private sealed record LoginRequest(string Email, string Password);
+
+    private sealed record LoginResponse(string AccessToken);
 
     private sealed record StudentRequest(
         string FullName,

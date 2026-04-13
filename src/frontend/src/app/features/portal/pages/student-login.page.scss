@@ -26,6 +26,15 @@
   margin-bottom: 1.25rem;
 }
 
+.login-credentials {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(11, 107, 143, 0.08);
+  color: var(--accent-strong);
+}
+
 .login-rules {
   margin: 0;
   padding-left: 1.1rem;

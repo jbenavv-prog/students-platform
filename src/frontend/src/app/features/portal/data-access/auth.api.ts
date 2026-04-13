@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { API_BASE_URL } from '../../../core/api/api.tokens';
-import { StudentSessionState } from '../../../core/session/student-session.service';
+import { StudentSessionState, UserRole } from '../../../core/session/student-session.service';
 
 export interface StudentLoginRequest {
   email: string;
@@ -14,7 +14,9 @@ interface StudentSessionResponse {
   id: string;
   fullName: string;
   email: string;
-  programName: string;
+  programName: string | null;
+  role: UserRole;
+  accessToken: string;
 }
 
 @Injectable({
@@ -27,10 +29,12 @@ export class AuthApiService {
   login(request: StudentLoginRequest): Observable<StudentSessionState> {
     return this.http.post<StudentSessionResponse>(`${this.apiBaseUrl}/auth/login`, request).pipe(
       map((response) => ({
-        studentId: response.id,
+        userId: response.id,
         fullName: response.fullName,
         email: response.email,
-        programName: response.programName
+        programName: response.programName,
+        role: response.role,
+        accessToken: response.accessToken
       }))
     );
   }

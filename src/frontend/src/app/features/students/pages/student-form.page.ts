@@ -1,10 +1,11 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { normalizeApiError } from '../../../core/api/api-error.mapper';
+import { StudentSessionService } from '../../../core/session/student-session.service';
 import { SectionCardComponent } from '../../../shared/ui/section-card/section-card.component';
 import { analyzeSubjectSelection, canAddSubject } from '../../../shared/utils/student-selection.util';
 import { StudentsFacade } from '../data-access/students.facade';
@@ -22,6 +23,7 @@ export class StudentFormPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly formBuilder = inject(NonNullableFormBuilder);
+  private readonly sessionService = inject(StudentSessionService);
 
   readonly ready = signal(false);
   readonly studentId = signal<string | null>(null);
@@ -39,6 +41,11 @@ export class StudentFormPage implements OnInit {
   });
 
   readonly isEditing = computed(() => Boolean(this.studentId()));
+  readonly isOwnRecord = computed(() => {
+    const session = this.sessionService.session();
+    return Boolean(session && this.studentId() && session.role === 'estudiante' && session.userId === this.studentId());
+  });
+  readonly backLink = computed(() => this.isOwnRecord() ? '/portal' : '/students');
   readonly subjects = computed(() => this.facade.subjects());
   readonly selection = computed(() =>
     analyzeSubjectSelection(this.selectedSubjectIds(), this.subjects())
@@ -168,7 +175,7 @@ export class StudentFormPage implements OnInit {
         : await this.facade.createStudent(request);
 
       await this.facade.loadStudents();
-      await this.router.navigate(['/students', student.id]);
+      await this.router.navigate(this.isOwnRecord() ? ['/portal'] : ['/students', student.id]);
     } catch (error) {
       const normalized = normalizeApiError(error);
       this.serverFieldErrors.set(normalized.fieldErrors);
@@ -182,4 +189,3 @@ export class StudentFormPage implements OnInit {
     this.form.controls.password.updateValueAndValidity();
   }
 }
-

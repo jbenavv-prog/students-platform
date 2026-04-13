@@ -18,7 +18,7 @@ var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddHealthChecks()
     .AddCheck(
         "self",
@@ -47,6 +47,8 @@ var app = builder.Build();
 app.UseMiddleware<RequestObservabilityMiddleware>();
 app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseCors("Frontend");
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
