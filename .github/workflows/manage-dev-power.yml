@@ -113,6 +113,31 @@ jobs:
       - name: Start dev database
         if: ${{ inputs.power_state == 'active' && inputs.manage_database }}
         run: |
+          wait_for_db_status() {
+            TARGET_STATUS="$1"
+            ATTEMPT=0
+            MAX_ATTEMPTS=40
+
+            while [ "${ATTEMPT}" -lt "${MAX_ATTEMPTS}" ]; do
+              CURRENT_STATUS="$(aws rds describe-db-instances \
+                --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
+                --query "DBInstances[0].DBInstanceStatus" \
+                --output text)"
+
+              echo "Database ${DB_INSTANCE_IDENTIFIER} status: ${CURRENT_STATUS}"
+
+              if [ "${CURRENT_STATUS}" = "${TARGET_STATUS}" ]; then
+                return 0
+              fi
+
+              ATTEMPT=$((ATTEMPT + 1))
+              sleep 30
+            done
+
+            echo "Timed out waiting for database ${DB_INSTANCE_IDENTIFIER} to reach ${TARGET_STATUS}."
+            return 1
+          }
+
           STATUS="$(aws rds describe-db-instances \
             --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
             --query "DBInstances[0].DBInstanceStatus" \
@@ -124,7 +149,7 @@ jobs:
             aws rds start-db-instance --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
             aws rds wait db-instance-available --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
           elif [ "${STATUS}" = "stopping" ]; then
-            aws rds wait db-instance-stopped --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+            wait_for_db_status "stopped"
             aws rds start-db-instance --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
             aws rds wait db-instance-available --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
           else
@@ -139,6 +164,31 @@ jobs:
       - name: Stop dev database
         if: ${{ inputs.power_state == 'hibernated' && inputs.manage_database }}
         run: |
+          wait_for_db_status() {
+            TARGET_STATUS="$1"
+            ATTEMPT=0
+            MAX_ATTEMPTS=40
+
+            while [ "${ATTEMPT}" -lt "${MAX_ATTEMPTS}" ]; do
+              CURRENT_STATUS="$(aws rds describe-db-instances \
+                --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
+                --query "DBInstances[0].DBInstanceStatus" \
+                --output text)"
+
+              echo "Database ${DB_INSTANCE_IDENTIFIER} status: ${CURRENT_STATUS}"
+
+              if [ "${CURRENT_STATUS}" = "${TARGET_STATUS}" ]; then
+                return 0
+              fi
+
+              ATTEMPT=$((ATTEMPT + 1))
+              sleep 30
+            done
+
+            echo "Timed out waiting for database ${DB_INSTANCE_IDENTIFIER} to reach ${TARGET_STATUS}."
+            return 1
+          }
+
           STATUS="$(aws rds describe-db-instances \
             --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}" \
             --query "DBInstances[0].DBInstanceStatus" \
@@ -148,11 +198,11 @@ jobs:
             echo "Database ${DB_INSTANCE_IDENTIFIER} is already stopped."
           elif [ "${STATUS}" = "available" ]; then
             aws rds stop-db-instance --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
-            aws rds wait db-instance-stopped --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+            wait_for_db_status "stopped"
           elif [ "${STATUS}" = "starting" ]; then
             aws rds wait db-instance-available --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
             aws rds stop-db-instance --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
-            aws rds wait db-instance-stopped --db-instance-identifier "${DB_INSTANCE_IDENTIFIER}"
+            wait_for_db_status "stopped"
           else
             echo "Database ${DB_INSTANCE_IDENTIFIER} is ${STATUS}; not stopping it automatically."
             exit 1
